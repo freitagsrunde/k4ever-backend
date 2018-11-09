@@ -6,7 +6,7 @@ import (
 
 type User struct {
 	gorm.Model
-	Name string `json:"name"`
+	Name string `json:"name",gorm:"unique"`
 }
 
 type Userer interface {

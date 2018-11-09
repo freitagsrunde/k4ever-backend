@@ -8,11 +8,11 @@ import (
 
 type Product struct {
 	gorm.Model
-	Name        string
+	Name        string `gorm:"unique"`
 	Description string
 	Price       float64
 	Deposit     float64
-	Barcode     int
+	Barcode     int `gorm:"unique"`
 	//Type        []Type `gorm:"many2many:product_types;"`
 	Archived bool
 }
