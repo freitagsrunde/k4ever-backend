@@ -10,6 +10,7 @@ import (
 
 	"github.com/freitagsrunde/k4ever-backend/controllers"
 	"github.com/freitagsrunde/k4ever-backend/db"
+	"github.com/freitagsrunde/k4ever-backend/models"
 )
 
 func main() {
@@ -29,7 +30,8 @@ func main() {
 		render.Render(w, r, &Test{Name: "test"})
 	})
 
-	r.Mount("/users", controllers.UsersResource{DB: db}.Routes())
+	r.Mount("/users", controllers.UserHandler{DB: db, UR: &models.UserResource{}}.Routes())
+	r.Mount("/products", controllers.ProductHandler{PR: &models.ProductResource{DB: db}}.Routes())
 
 	http.ListenAndServe(":8080", r)
 }

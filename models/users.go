@@ -1,8 +1,6 @@
 package models
 
 import (
-	"net/http"
-
 	"github.com/jinzhu/gorm"
 )
 
@@ -11,19 +9,15 @@ type User struct {
 	Name string `json:"name"`
 }
 
-func (u *User) Bind(r *http.Request) error {
-	return nil
+type Userer interface {
+	ListUsers(db *gorm.DB) ([]User, error)
+	GetUser(id string, db *gorm.DB) (User, error)
+	CreateUser(user *User, db *gorm.DB) error
 }
 
-func (u *User) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
+type UserResource struct{}
 
-func NewUser(name string) User {
-	return User{Name: name}
-}
-
-func ListUsers(db *gorm.DB) ([]User, error) {
+func (UR UserResource) ListUsers(db *gorm.DB) ([]User, error) {
 	var users []User
 	if err := db.Find(&users).Error; err != nil {
 		return []User{}, err

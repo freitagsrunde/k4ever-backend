@@ -9,7 +9,7 @@ import (
 func Init() *gorm.DB {
 	db, err := gorm.Open("sqlite3", "test.db")
 
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.User{}, &models.Product{})
 	if err != nil {
 		panic(err)
 	}

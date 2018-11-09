@@ -9,11 +9,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-type UsersResource struct {
+type UserHandler struct {
 	DB *gorm.DB
+	UR *models.UserResource
 }
 
-func (rs UsersResource) Routes() chi.Router {
+func (rs UserHandler) Routes() chi.Router {
 	r := chi.NewRouter()
 
 	r.Get("/", rs.List)
@@ -22,8 +23,8 @@ func (rs UsersResource) Routes() chi.Router {
 	return r
 }
 
-func (rs UsersResource) List(w http.ResponseWriter, r *http.Request) {
-	users, err := models.ListUsers(rs.DB)
+func (rs UserHandler) List(w http.ResponseWriter, r *http.Request) {
+	users, err := rs.UR.ListUsers(rs.DB)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -31,13 +32,13 @@ func (rs UsersResource) List(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &users)
 }
 
-func (rs UsersResource) Get(w http.ResponseWriter, r *http.Request) {
-	var articleID string
-	if articleID = chi.URLParam(r, "articleID"); articleID == "" {
+func (rs UserHandler) Get(w http.ResponseWriter, r *http.Request) {
+	var userID string
+	if userID = chi.URLParam(r, "userID"); userID == "" {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	user, err := models.GetUser(articleID, rs.DB)
+	user, err := models.GetUser(userID, rs.DB)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
