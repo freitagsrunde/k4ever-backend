@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/freitagsrunde/k4ever-backend/models"
 	"github.com/go-chi/chi"
@@ -16,8 +17,9 @@ func (ph ProductHandler) Routes() chi.Router {
 	r := chi.NewRouter()
 
 	r.Get("/", ph.List)
-	r.Get("/{productID}", ph.Get)
 	r.Post("/", ph.Create)
+	r.Get("/{productID}", ph.Get)
+	r.Put("/{productID}", ph.Update)
 
 	return r
 }
@@ -32,12 +34,11 @@ func (ph ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ph ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
-	var productID string
-	if productID = chi.URLParam(r, "productID"); productID == "" {
-		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
+	productID, err := strconv.ParseUint(chi.URLParam(r, "productID"), 10, 0)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
-	product, err := ph.PR.GetProduct(productID)
+	product, err := ph.PR.GetProduct(uint(productID))
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -56,4 +57,23 @@ func (ph ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.JSON(w, r, &product)
+}
+
+func (ph ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
+	productID, err := strconv.ParseUint(chi.URLParam(r, "productID"), 10, 0)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+	}
+	product := &models.Product{}
+	if err := render.Bind(r, product); err != nil {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	(*product).ID = uint(productID)
+	err = ph.PR.UpdateProduct(product)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	render.JSON(w, r, product)
 }
