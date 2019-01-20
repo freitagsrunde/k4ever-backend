@@ -10,5 +10,7 @@ func registerRoutes(app *gin.Engine, config k4ever.Config) {
 	v1 := app.Group("/api/v1/")
 	{
 		api.ProductRoutes(v1, config)
+		api.UserRoutes(v1, config)
+		api.PermissionRoutes(v1, config)
 	}
 }

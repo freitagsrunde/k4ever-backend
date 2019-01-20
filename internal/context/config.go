@@ -48,5 +48,6 @@ func (c *Config) MigrateDB() {
 
 	db.AutoMigrate(
 		&models.Product{},
+		&models.User{},
 	)
 }
