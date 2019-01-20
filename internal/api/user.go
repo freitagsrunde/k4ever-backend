@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -44,11 +46,18 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	router.POST("", func(c *gin.Context) {
 		var user models.User
-		if err := c.ShouldBindJSON(&user); err != nil {
+		var err error
+		if err = c.ShouldBindJSON(&user); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := config.DB().Create(&user).Error; err != nil {
+		password, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error while hashing password"})
+			return
+		}
+		user.Password = string(password)
+		if err = config.DB().Create(&user).Error; err != nil {
 			if strings.HasPrefix(err.Error(), "UNIQUE constraint failed:") {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
 				return

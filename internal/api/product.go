@@ -13,8 +13,14 @@ func ProductRoutes(router *gin.RouterGroup, config k4ever.Config) {
 	{
 		getProducts(products, config)
 		getProduct(products, config)
-		createProduct(products, config)
 		getProductImage(products, config)
+	}
+}
+
+func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
+	products := router.Group("/products/")
+	{
+		createProduct(products, config)
 	}
 }
 
