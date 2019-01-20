@@ -61,7 +61,7 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 }
 
 func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
-	router.PUT(":id", func(c *gin.Context) {
+	router.PUT(":id/permissions/", func(c *gin.Context) {
 		var user models.User
 		var permission models.Permission
 		if err := c.ShouldBindJSON(&permission); err != nil {
@@ -76,6 +76,8 @@ func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		user.Permissions = append(user.Permissions, permission)
+		config.DB().Save(&user)
 
 		c.JSON(http.StatusAccepted, user)
 	})
