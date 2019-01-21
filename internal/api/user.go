@@ -18,6 +18,7 @@ func UserRoutes(router *gin.RouterGroup, config k4ever.Config) {
 		getUser(users, config)
 		createUser(users, config)
 		addPermissionToUser(users, config)
+		PurchaseRoutes(users, config)
 	}
 }
 

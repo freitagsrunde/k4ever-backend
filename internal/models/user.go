@@ -9,4 +9,5 @@ type User struct {
 	DisplayName string `json:"display_name" gorm:"not_null;"`
 	Balance     float64
 	Permissions []Permission `gorm:"many2many:user_permissions;"`
+	Purchases   []Purchase
 }

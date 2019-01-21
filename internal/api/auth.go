@@ -14,6 +14,7 @@ func AuthRoutes(router *gin.RouterGroup, config k4ever.Config) {
 	auth := router.Group("")
 	{
 		login(auth, config)
+		logout(auth, config)
 	}
 }
 
@@ -40,5 +41,19 @@ func login(router *gin.RouterGroup, config k4ever.Config) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Successfully authenticated"})
+	})
+}
+
+func logout(router *gin.RouterGroup, config k4ever.Config) {
+	router.POST("/logout/", func(c *gin.Context) {
+		session := sessions.Default(c)
+		user := session.Get("user")
+		if user == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
+			return
+		}
+		session.Delete("user")
+		session.Save()
+		c.JSON(http.StatusOK, gin.H{"message": "Successfully logged out"})
 	})
 }

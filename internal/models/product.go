@@ -4,10 +4,10 @@ import "github.com/jinzhu/gorm"
 
 type Product struct {
 	gorm.Model
-	ProductName        string  `json:"name" gorm:"not_null"`
-	ProductPrice       float64 `gorm:"not_null"`
-	ProductDescription string  `gorm:"type:text;"`
-	ProductDeposit     float64
-	Barcode            string
-	ProductImage       string
+	Name        string  `json:"name" gorm:"not_null"`
+	Price       float64 `gorm:"not_null"`
+	Description string  `gorm:"type:text;"`
+	Deposit     float64
+	Barcode     string
+	Image       string
 }
