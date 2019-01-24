@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func PermissionRoutes(router *gin.RouterGroup, config k4ever.Config) {
+func PermissionRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	permissions := router.Group("/permissions/")
 	{
 		getPermissions(permissions, config)

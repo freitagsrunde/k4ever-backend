@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ProductRoutes(router *gin.RouterGroup, config k4ever.Config) {
+func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
 		getProducts(products, config)

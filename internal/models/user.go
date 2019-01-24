@@ -2,6 +2,8 @@ package models
 
 import "github.com/jinzhu/gorm"
 
+// Make custom type to add custom marshal interface to it
+
 type User struct {
 	gorm.Model
 	UserName    string `json:"name" gorm:"not_null;unique;"`

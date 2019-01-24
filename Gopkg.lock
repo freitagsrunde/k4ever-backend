@@ -2,12 +2,28 @@
 
 
 [[projects]]
+  digest = "1:12750f0ddc83c3351b450a6e078f68f70453861237e746292843d8c6564f25d6"
+  name = "github.com/appleboy/gin-jwt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "18c777042be3ecc5cb3bf79cd24cbd6b28683cdc"
+  version = "v2.5.0"
+
+[[projects]]
   digest = "1:db932d4696ed23e244a69a60d258a23816aceb012a95e4c3871c711d4fc120e7"
   name = "github.com/boj/redistore"
   packages = ["."]
   pruneopts = "UT"
   revision = "fc113767cd6b051980f260d6dbe84b2740c46ab0"
   version = "v1.2"
+
+[[projects]]
+  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  pruneopts = "UT"
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:abeb38ade3f32a92943e5be54f55ed6d6e3b6602761d74b4aab4c9dd45c18abd"
@@ -27,6 +43,22 @@
   pruneopts = "UT"
   revision = "a69d19351219b6dd56f274f96d85a7014a2ec34e"
   version = "v1.6.0"
+
+[[projects]]
+  digest = "1:2b59aca2665ff804f6606c8829eaee133ddd3aefbc841014660d961b0034f888"
+  name = "github.com/gin-contrib/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cf4846e6a636a76237a28d9286f163c132e841bc"
+  version = "v1.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:81725a9f2f64002d81e8eb1d14a505bb450c01d6645f8330aaae4c2d0009db91"
+  name = "github.com/gin-contrib/sessions"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "dc5246754963078ec815f6697f7075c0c0c7d86d"
 
 [[projects]]
   branch = "master"
@@ -200,6 +232,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  pruneopts = "UT"
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:d707dbc1330c0ed177d4642d6ae102d5e2c847ebd0eb84562d0dc4f024531cfc"
   name = "github.com/spf13/afero"
   packages = [
@@ -251,6 +291,14 @@
   version = "v1.3.1"
 
 [[projects]]
+  digest = "1:972c2427413d41a1e06ca4897e8528e5a1622894050e2f527b38ddf0f343f759"
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  pruneopts = "UT"
+  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:03aa6e485e528acb119fb32901cf99582c380225fc7d5a02758e08b180cb56c3"
   name = "github.com/ugorji/go"
   packages = ["codec"]
@@ -260,20 +308,24 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1ecf2a49df33be51e757d0033d5d51d5f784f35f68e5a38f797b2d3f03357d71"
+  digest = "1:427cdd2c12a3290ace873d2f9d3958d126c4d75596dbc09de05852da08a3dab5"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
     "blowfish",
+    "ssh/terminal",
   ]
   pruneopts = "UT"
   revision = "ff983b9c42bc9fbf91556e191cc8efb585c16908"
 
 [[projects]]
   branch = "master"
-  digest = "1:f6f6d9d6f80c9e32acc0f4f3b904e0b9f5b18a7757c2ef941121bd79a10e7bdf"
+  digest = "1:43cde116ff48f299eddb7e6515677e6d0a2c915854bb05a333877f07c3bb3033"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "unix",
+    "windows",
+  ]
   pruneopts = "UT"
   revision = "11f53e03133963fb11ae0588e08b5e0b85be8be5"
 
@@ -291,6 +343,14 @@
   pruneopts = "UT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
+
+[[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "gopkg.in/dgrijalva/jwt-go.v3"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   digest = "1:cbc72c4c4886a918d6ab4b95e347ffe259846260f99ebdd8a198c2331cf2b2e9"
@@ -312,13 +372,18 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/appleboy/gin-jwt",
+    "github.com/gin-contrib/cors",
+    "github.com/gin-contrib/sessions",
     "github.com/gin-gonic/contrib/sessions",
     "github.com/gin-gonic/gin",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/sqlite",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
+    "github.com/stretchr/testify/assert",
     "golang.org/x/crypto/bcrypt",
+    "golang.org/x/crypto/ssh/terminal",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -9,15 +9,16 @@ import (
 func registerRoutes(app *gin.Engine, config k4ever.Config) {
 	v1 := app.Group("/api/v1/")
 	{
-		api.ProductRoutes(v1, config)
-		api.AuthRoutes(v1, config)
+		api.ProductRoutesPublic(v1, config)
+		api.AuthRoutesPublic(v1, config)
+		v1.POST("/login/", authMiddleware.LoginHandler)
+		api.UserRoutesPrivate(v1, config)
 	}
 	v1Private := app.Group("/api/v1/")
 	{
-		v1Private.Use(AuthRequired())
+		v1Private.Use(authMiddleware.MiddlewareFunc())
 
-		api.PermissionRoutes(v1Private, config)
-		api.UserRoutes(v1Private, config)
+		api.PermissionRoutesPrivate(v1Private, config)
 		api.ProductRoutesPrivate(v1Private, config)
 	}
 }

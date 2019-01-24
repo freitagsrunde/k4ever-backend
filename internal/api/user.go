@@ -4,14 +4,12 @@ import (
 	"net/http"
 	"strings"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.RouterGroup, config k4ever.Config) {
+func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	users := router.Group("/users/")
 	{
 		getUsers(users, config)
@@ -19,6 +17,7 @@ func UserRoutes(router *gin.RouterGroup, config k4ever.Config) {
 		createUser(users, config)
 		addPermissionToUser(users, config)
 		PurchaseRoutes(users, config)
+		addBalance(users, config)
 	}
 }
 
@@ -45,22 +44,23 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 }
 
 func createUser(router *gin.RouterGroup, config k4ever.Config) {
+	type newUser struct {
+		UserName    string `json:"name"`
+		Password    string `json:"password""`
+		DisplayName string `json:"display_name"`
+	}
 	router.POST("", func(c *gin.Context) {
+		var bind newUser
 		var user models.User
-		var err error
-		if err = c.ShouldBindJSON(&user); err != nil {
+		if err := c.ShouldBindJSON(&bind); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		password, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error while hashing password"})
-			return
-		}
-		user.Password = string(password)
-		if err = config.DB().Create(&user).Error; err != nil {
-			if strings.HasPrefix(err.Error(), "UNIQUE constraint failed:") {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Username already taken"})
+		user.UserName = bind.UserName
+		user.DisplayName = bind.DisplayName
+		if err := k4ever.CreateUser(&user, config); err != nil {
+			if strings.HasPrefix(err.Error(), "Username") {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -90,5 +90,33 @@ func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
 		config.DB().Save(&user)
 
 		c.JSON(http.StatusAccepted, user)
+	})
+}
+
+func addBalance(router *gin.RouterGroup, config k4ever.Config) {
+	type Balance struct {
+		Amount float64
+	}
+	router.PUT(":id/balance/", func(c *gin.Context) {
+		var user models.User
+		var balance Balance
+		if err := c.ShouldBindJSON(&balance); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		tx := config.DB().Begin()
+		if err := tx.Where("id = ?", c.Param("id")).First(&user).Error; err != nil {
+			tx.Rollback()
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No such user id"})
+			return
+		}
+		user.Balance = user.Balance + balance.Amount
+		if err := tx.Save(&user).Error; err != nil {
+			tx.Rollback()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		tx.Commit()
+		c.JSON(http.StatusOK, user)
 	})
 }
