@@ -38,6 +38,12 @@ func init() {
 }
 
 func createUser(cmd *cobra.Command, args []string) {
+	username := args[0]
+	config := context.NewConfig()
+	if _, err := k4ever.GetUser(username, config); err != nil {
+		fmt.Println("User already exists")
+		return
+	}
 	if displayName == "" {
 		displayName = args[0]
 	}
@@ -60,14 +66,14 @@ func createUser(cmd *cobra.Command, args []string) {
 			return
 		}
 	}
-	fmt.Printf("Create user: %s...\n", args[0])
+	fmt.Printf("Create user: %s...\n", username)
 
 	config := context.NewConfig()
-	user := models.User{UserName: args[0], DisplayName: displayName, Password: password}
+	user := models.User{UserName: username, DisplayName: displayName, Password: password}
 	if err := k4ever.CreateUser(&user, config); err != nil {
 		fmt.Printf("Error while creating user: %s", err.Error())
 		return
 	}
 
-	fmt.Printf("User %s created\n", args[0])
+	fmt.Printf("User %s created\n", username)
 }

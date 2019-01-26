@@ -8,6 +8,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func GetUser(name string, config Config) (user models.User, err error) {
+	if err = config.DB().Where("name = ?", name).First(&user).Error; err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
 func CreateUser(user *models.User, config Config) error {
 	password, err := bcrypt.GenerateFromPassword([]byte((*user).Password), 8)
 	if err != nil {
