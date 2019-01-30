@@ -23,20 +23,21 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 
 func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET("", func(c *gin.Context) {
-		var user models.User
-		var err error
-		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		var users []models.User
+		if err := config.DB().Find(&users); err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No user was found"})
 			return
 		}
+    c.JSON(http.StatusOK, users)
 	})
 }
 
 func getUser(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET(":id", func(c *gin.Context) {
 		var user models.User
-		if err := config.DB().Where("id = ?", c.Param("id")).First(&user).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		var err error
+		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
 		c.JSON(http.StatusOK, user)
