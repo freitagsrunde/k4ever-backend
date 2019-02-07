@@ -40,9 +40,6 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 //		Produces:
 //		- application/json
 //
-// 		Security:
-//		jwt:
-//
 //		Responses:
 //		  default: GenericError
 //		  200: productsResponse
@@ -57,6 +54,21 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route GET /products/:id/ products getProduct
+//
+// Get information for a product by id
+//
+// This will show detailed information for a specific product
+//
+// 		Consumes:
+// 		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  200: Product
 func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET(":id/", func(c *gin.Context) {
 		var product models.Product
