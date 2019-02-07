@@ -10,6 +10,7 @@ type Item struct {
 	PurchaseID uint
 }
 
+// swagger:model
 type Purchase struct {
 	gorm.Model
 	Amount float64

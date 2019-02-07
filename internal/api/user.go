@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/freitagsrunde/k4ever-backend/internal/api/response"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,19 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	}
 }
 
+// swagger:route GET /users/ users getUsers
+//
+// Lists all users
+//
+// This will show all available users by default
+//
+// 		Produces:
+//      - applications/json
+//
+//		Responses:
+//		  default: GenericError
+// 	 	  200: UsersResponse
+//		  404: GenericError
 func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET("", func(c *gin.Context) {
 		var users []models.User
@@ -28,7 +42,7 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No user was found"})
 			return
 		}
-		c.JSON(http.StatusOK, users)
+		c.JSON(http.StatusOK, response.UsersResponse{Users: users})
 	})
 }
 

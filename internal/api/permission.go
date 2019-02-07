@@ -18,6 +18,19 @@ func PermissionRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	}
 }
 
+// swagger:route GET /permissions/ permissions getPermissions
+//
+// Lists all permsissions
+//
+// This will show all permissions by default
+//
+// 		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  200: PermissionsResponse
+//        404: GenericError
 func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET("", func(c *gin.Context) {
 		var permissions []models.Permission
@@ -29,6 +42,17 @@ func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route GET /permissions/{id} permissions getPermission
+//
+// Get detailed information of a permission
+//
+// 		Produces:
+//   	- application/json
+//
+//		Responses:
+// 		  default: GenericError
+//		  200: Permission
+//		  404: GenericError
 func getPermission(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET(":id", func(c *gin.Context) {
 		var permission models.Permission

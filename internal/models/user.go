@@ -4,6 +4,9 @@ import "github.com/jinzhu/gorm"
 
 // Make custom type to add custom marshal interface to it
 
+// A generic User
+//
+// swagger:model
 type User struct {
 	gorm.Model
 	UserName    string `json:"name" gorm:"not_null;unique;"`

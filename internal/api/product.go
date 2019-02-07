@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	jwt "github.com/appleboy/gin-jwt"
+	"github.com/freitagsrunde/k4ever-backend/internal/api/params"
 	"github.com/freitagsrunde/k4ever-backend/internal/api/response"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
@@ -80,6 +81,21 @@ func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route POST /products/ products createProduct
+//
+// Create a new product
+//
+// Create a new product (currently with all fields available)
+//
+// 		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//        default: GenericError
+//		  201: Product
 func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 	router.POST("", func(c *gin.Context) {
 		var product models.Product
@@ -91,18 +107,43 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusCreated, product)
+		c.JSON(http.StatusCreated, params.ProductParam{Product: product})
 	})
 }
 
+// swagger:route GET /products/{id}/image/ getProductImage
+//
+// Not yet implemented
+//
+// Returns a product image or path to it (tbd)
+//
+// 		Produces:
+//		- application/json
+//
+//		Response:
+//		  default: GenericError
 func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET(":id/image/", func(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"Hello": "World"})
 	})
 }
 
+// swagger:route POST /products/{id}/buy/ buyProduct
+//
+// Buy a product as the current user
+//
+// Buys a product according to the user read from the jwt header
+//
+//		Produces:
+//		- application/json
+//
+//		Response:
+//		  default: GenericError
+//		  200: Purchase
+//		  404: GenericError
+//        500: GenericError
 func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
-	router.POST(":id/buy", func(c *gin.Context) {
+	router.POST(":id/buy/", func(c *gin.Context) {
 		var product models.Product
 		tx := config.DB().Begin()
 		// Get Product
