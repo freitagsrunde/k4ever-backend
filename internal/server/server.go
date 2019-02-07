@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/appleboy/gin-jwt"
@@ -28,13 +27,15 @@ func Start(config k4ever.Config) {
 		MaxRefresh: time.Hour,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*models.User); ok {
+				fmt.Print(v.UserName)
 				return jwt.MapClaims{
-					"id": v.ID,
+					"id":   v.ID,
+					"name": v.UserName,
 				}
 			}
 			return nil
 		},
-		// IdentityHandler: getIdentity,
+		//IdentityHandler: getIdentity,
 		Authenticator: authenticate,
 	}
 
@@ -52,11 +53,12 @@ type login struct {
 
 func getIdentity(claims jwt.MapClaims) interface{} {
 	user := &models.User{}
-	uid, err := strconv.ParseUint(claims["id"].(string), 10, 64)
+	//uid, err := strconv.ParseUint(claims["id"].(string), 10, 64)
+	err := configForAuth.DB().Where("user_name = ?", claims["name"].(string)).First(&user).Error
 	if err != nil {
 		return nil
 	}
-	user.ID = uint(uid)
+	//user.ID = uint(uid)
 	return user
 }
 

@@ -28,7 +28,7 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No user was found"})
 			return
 		}
-    c.JSON(http.StatusOK, users)
+		c.JSON(http.StatusOK, users)
 	})
 }
 

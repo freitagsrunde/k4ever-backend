@@ -67,6 +67,7 @@ func createUser(cmd *cobra.Command, args []string) {
 		}
 	}
 	fmt.Printf("Create user: %s...\n", username)
+
 	user := models.User{UserName: username, DisplayName: displayName, Password: password}
 	if err := k4ever.CreateUser(&user, config); err != nil {
 		fmt.Printf("Error while creating user: %s", err.Error())

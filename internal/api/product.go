@@ -1,11 +1,13 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
+	jwt "github.com/appleboy/gin-jwt"
+	"github.com/freitagsrunde/k4ever-backend/internal/api/response"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
-	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,14 +28,32 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	}
 }
 
+// swagger:route GET /products/ products getProducts
+//
+// Lists all available prodcuts
+//
+// This will show all available products by default
+//
+// 		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+// 		Security:
+//		jwt:
+//
+//		Responses:
+//		  default: GenericError
+//		  200: productsResponse
 func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET("", func(c *gin.Context) {
 		var products []models.Product
 		if err := config.DB().Find(&products).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusNotFound, response.GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, products)
+		c.JSON(http.StatusOK, response.ProductsResponse{Products: products})
 	})
 }
 
@@ -95,8 +115,10 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 		}
 		// Update Balance
 		var user models.User
-		session := sessions.Default(c)
-		userID := session.Get("user")
+		claims := jwt.ExtractClaims(c)
+		fmt.Print(claims["id"])
+		fmt.Print(claims["name"])
+		userID := claims["id"]
 		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
 			tx.Rollback()
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
