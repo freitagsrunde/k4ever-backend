@@ -46,6 +46,19 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route GET /users/{id}/ user getUser
+//
+// Get detailed information of a user
+//
+// This will show detailed information for a specific user
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//	  	  200: User
+//		  404: GenericError
 func getUser(router *gin.RouterGroup, config k4ever.Config) {
 	router.GET(":id", func(c *gin.Context) {
 		var user models.User
@@ -58,11 +71,39 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// Input params for creating a user
+//
+// swagger:model
+type newUser struct {
+	UserName    string `json:"name"`
+	Password    string `json:"password""`
+	DisplayName string `json:"display_name"`
+}
+
+// swagger:route POST /users/ product createUser
+//
+// Create a new user
+//
+// 		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//        201: CreateUserParams
+//		  400: GenericError
+//	      500: GenericError
 func createUser(router *gin.RouterGroup, config k4ever.Config) {
-	type newUser struct {
-		UserName    string `json:"name"`
-		Password    string `json:"password""`
-		DisplayName string `json:"display_name"`
+	// swagger:parameters createUser
+	type CreateUserParams struct {
+		// in: path
+		// required: true
+		Id string `json:"id"`
+		// in: body
+		// required: true
+		NewUser newUser
 	}
 	router.POST("", func(c *gin.Context) {
 		var bind newUser
@@ -85,7 +126,33 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route PUT /users/{id}/permissions/ user permission addPermissionToUser
+//
+// Add permission to user
+//
+// Links an existing permission to a user
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//        203: User
+//		  400: GenericError
+//		  404: GenericError
 func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters addPermissionToUser
+	type AddPermissionParam struct {
+		// in: path
+		// required: true
+		Id string `json:"id"`
+		// in: body
+		// required: true
+		Permission models.Permission
+	}
 	router.PUT(":id/permissions/", func(c *gin.Context) {
 		var user models.User
 		var permission models.Permission
@@ -108,9 +175,40 @@ func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:model
+type Balance struct {
+	Amount float64
+}
+
+// swagger:route PUT /users/{id}/balance/ user balance addBalance
+//
+// Add balance
+//
+// Add the given balance to the logged in user
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  200: User
+//		  400: GenericError
+//        404: GenericError
+//        500: GenericError
 func addBalance(router *gin.RouterGroup, config k4ever.Config) {
-	type Balance struct {
-		Amount float64
+
+	// swagger:parameters addBalance
+	type AddBalanceParams struct {
+		// in: path
+		// required: true
+		Id string `json:"id"`
+
+		// in: body
+		// required: true
+		Balance Balance
 	}
 	router.PUT(":id/balance/", func(c *gin.Context) {
 		var user models.User
