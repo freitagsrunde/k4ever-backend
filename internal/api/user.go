@@ -60,6 +60,12 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 //	  	  200: User
 //		  404: GenericError
 func getUser(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getUser
+	type getUserParams struct {
+		// in:path
+		// required: true
+		Id int `json:"id"`
+	}
 	router.GET(":id", func(c *gin.Context) {
 		var user models.User
 		var err error
@@ -92,7 +98,7 @@ type newUser struct {
 //
 //		Responses:
 //		  default: GenericError
-//        201: CreateUserParams
+//        201: User
 //		  400: GenericError
 //	      500: GenericError
 func createUser(router *gin.RouterGroup, config k4ever.Config) {

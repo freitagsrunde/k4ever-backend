@@ -54,6 +54,12 @@ func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
 //		  200: Permission
 //		  404: GenericError
 func getPermission(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getPermission
+	type getPermissionParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
 	router.GET(":id", func(c *gin.Context) {
 		var permission models.Permission
 		if err := config.DB().Find(&permission).Error; err != nil {
@@ -64,7 +70,32 @@ func getPermission(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route POST /permission/ permissions createPermission
+//
+// Create a new permission
+//
+// Creating a permission has no real function yet, since they arent
+// being checked anywhere
+// This will probably be a role in the future with fixef permissions
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  201: Permission
+//		  400: GenericError
+//        500: GenericError
 func createPermission(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters createPermission
+	type CreatePermissionsParams struct {
+		// in: body
+		// required: true
+		Permission models.Permission
+	}
 	router.POST("", func(c *gin.Context) {
 		var permission models.Permission
 		if err := c.ShouldBindJSON(&permission); err != nil {

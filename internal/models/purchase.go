@@ -17,3 +17,8 @@ type Purchase struct {
 	Items  []Item
 	UserID uint
 }
+
+// swagger:model
+type PurchaseArray struct {
+	Purchases []Purchase
+}

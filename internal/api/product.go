@@ -71,6 +71,12 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 //		  default: GenericError
 //		  200: Product
 func getProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getProduct
+	type getProductParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
 	router.GET(":id/", func(c *gin.Context) {
 		var product models.Product
 		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
@@ -120,9 +126,16 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 // 		Produces:
 //		- application/json
 //
-//		Response:
+//		Responses:
 //		  default: GenericError
+//		  502: GenericError
 func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getProductImage
+	type getProductImageParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
 	router.GET(":id/image/", func(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{"Hello": "World"})
 	})
@@ -137,12 +150,18 @@ func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
 //		Produces:
 //		- application/json
 //
-//		Response:
+//		Responses:
 //		  default: GenericError
 //		  200: Purchase
 //		  404: GenericError
 //        500: GenericError
 func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters buyProduct
+	type buyProductParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
 	router.POST(":id/buy/", func(c *gin.Context) {
 		var product models.Product
 		tx := config.DB().Begin()

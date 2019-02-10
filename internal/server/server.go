@@ -62,6 +62,29 @@ func getIdentity(claims jwt.MapClaims) interface{} {
 	return user
 }
 
+// This is just for swagger
+
+// swagger:model
+type Token struct {
+	code   string
+	expire string
+	token  string
+}
+
+// swagger:route POST /login/ auth login
+//
+// Return a jwt token on login
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  401: GenericError
+//		  200: Token
 func authenticate(c *gin.Context) (interface{}, error) {
 	var loginVars login
 	var user models.User

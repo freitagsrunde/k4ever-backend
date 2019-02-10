@@ -16,7 +16,24 @@ func PurchaseRoutes(router *gin.RouterGroup, config k4ever.Config) {
 	}
 }
 
+// swagger:route GET /users/{id]/purchases/ users purchases getPurchaseHistory
+//
+// Get a list of all purchases
+//
+//		Produces:
+//		- application/json
+//
+//		Repsonses:
+//		  default: GenericError
+//		  200: PurchaseArray
+//		  400: GenericError
 func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters
+	type getPurchaseHistoryParams struct {
+		// in: path
+		// required: true
+		Id int
+	}
 	router.GET("", func(c *gin.Context) {
 		id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 		if err != nil {
@@ -30,6 +47,6 @@ func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 			return
 		}
-		c.JSON(http.StatusOK, purchases)
+		c.JSON(http.StatusOK, models.PurchaseArray{Purchases: purchases})
 	})
 }
