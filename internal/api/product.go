@@ -55,7 +55,7 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route GET /products/:id/ products getProduct
+// swagger:route GET /products/{id}/ products getProduct
 //
 // Get information for a product by id
 //
