@@ -9,7 +9,7 @@ import (
 )
 
 func GetUser(name string, config Config) (user models.User, err error) {
-	if err = config.DB().Where("name = ?", name).First(&user).Error; err != nil {
+	if err = config.DB().Where("user_name = ?", name).First(&user).Error; err != nil {
 		return models.User{}, err
 	}
 	return user, nil
