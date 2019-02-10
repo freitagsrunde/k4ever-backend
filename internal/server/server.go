@@ -66,9 +66,9 @@ func getIdentity(claims jwt.MapClaims) interface{} {
 
 // swagger:model
 type Token struct {
-	code   string
-	expire string
-	token  string
+	Code   string `json:"code"`
+	Expire string `json:"expire"`
+	Token  string `json:"token"`
 }
 
 // swagger:route POST /login/ auth login

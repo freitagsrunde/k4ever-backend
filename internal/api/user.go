@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/freitagsrunde/k4ever-backend/internal/api/response"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -31,18 +30,30 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 // 		Produces:
 //      - applications/json
 //
+//		Security:
+//		  jwt:
+//
 //		Responses:
 //		  default: GenericError
 // 	 	  200: UsersResponse
 //		  404: GenericError
 func getUsers(router *gin.RouterGroup, config k4ever.Config) {
+	// A UsersResponse returns a list of users
+	//
+	// swagger:response
+	type UsersResponse struct {
+		// An array of products
+		//
+		// in: body
+		Users []models.User
+	}
 	router.GET("", func(c *gin.Context) {
 		var users []models.User
 		if err := config.DB().Find(&users); err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No user was found"})
 			return
 		}
-		c.JSON(http.StatusOK, response.UsersResponse{Users: users})
+		c.JSON(http.StatusOK, UsersResponse{Users: users})
 	})
 }
 
@@ -54,6 +65,9 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Produces:
 //		- application/json
+//
+//		Security:
+//        jwt:
 //
 //		Responses:
 //		  default: GenericError
@@ -95,6 +109,9 @@ type newUser struct {
 //
 //		Produces:
 //		- application/json
+//
+//		Security:
+//        jwt:
 //
 //		Responses:
 //		  default: GenericError
@@ -143,6 +160,9 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Produces:
 //		- application/json
+//
+//		Security:
+//		  jwt:
 //
 //		Responses:
 //		  default: GenericError
@@ -197,6 +217,9 @@ type Balance struct {
 //
 //		Produces:
 //		- application/json
+//
+//		Security:
+//        jwt:
 //
 //		Responses:
 //		  default: GenericError

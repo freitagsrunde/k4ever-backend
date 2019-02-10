@@ -15,6 +15,12 @@
 //		Produces:
 //		- application/json
 //
+//      SecurityDefinitions:
+//        jwt:
+//          type: apiKey
+//          name: Authorization
+//          in: header
+//
 // swagger:meta
 package main
 

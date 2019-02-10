@@ -1,4 +1,4 @@
-package response
+package api
 
 // A generic error message
 // swagger:response

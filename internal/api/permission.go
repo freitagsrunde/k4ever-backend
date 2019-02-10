@@ -27,11 +27,23 @@ func PermissionRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 // 		Produces:
 //		- application/json
 //
+//		Security:
+//		  jwt:
+//
 //		Responses:
 //		  default: GenericError
 //		  200: PermissionsResponse
 //        404: GenericError
 func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
+	// A PermissionsResponse returns a list of products
+	//
+	// swagger:response
+	type PermissionsResponse struct {
+		// An array of permissions
+		//
+		// in: body
+		Permissions []models.Permission
+	}
 	router.GET("", func(c *gin.Context) {
 		var permissions []models.Permission
 		if err := config.DB().Find(&permissions).Error; err != nil {
@@ -48,6 +60,9 @@ func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
 //
 // 		Produces:
 //   	- application/json
+//
+//      Security:
+//		  jwt:
 //
 //		Responses:
 // 		  default: GenericError

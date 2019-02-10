@@ -23,6 +23,9 @@ func PurchaseRoutes(router *gin.RouterGroup, config k4ever.Config) {
 //		Produces:
 //		- application/json
 //
+//		Security:
+//        jwt:
+//
 //		Repsonses:
 //		  default: GenericError
 //		  200: PurchaseArray

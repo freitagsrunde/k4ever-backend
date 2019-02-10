@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	jwt "github.com/appleboy/gin-jwt"
-	"github.com/freitagsrunde/k4ever-backend/internal/api/params"
-	"github.com/freitagsrunde/k4ever-backend/internal/api/response"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -44,14 +42,24 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 //		Responses:
 //		  default: GenericError
 //		  200: productsResponse
+//		  404: GenericError
 func getProducts(router *gin.RouterGroup, config k4ever.Config) {
+	// A ProductsResponse returns a list of products
+	//
+	// swagger:response productsResponse
+	type ProductsResponse struct {
+		// An array of products
+		//
+		// in: body
+		Products []models.Product
+	}
 	router.GET("", func(c *gin.Context) {
 		var products []models.Product
 		if err := config.DB().Find(&products).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, response.GenericError{Body: struct{ Message string }{Message: err.Error()}})
+			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, response.ProductsResponse{Products: products})
+		c.JSON(http.StatusOK, ProductsResponse{Products: products})
 	})
 }
 
@@ -70,6 +78,7 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 //		Responses:
 //		  default: GenericError
 //		  200: Product
+//		  404: GenericError
 func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters getProduct
 	type getProductParams struct {
@@ -99,10 +108,21 @@ func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 //		Produces:
 //		- application/json
 //
+//		Security:
+//        jwt:
+//
 //		Responses:
 //        default: GenericError
 //		  201: Product
+//		  400: GenericError
+//        500: GenericError
 func createProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters createProduct
+	type ProductParam struct {
+		// in: body
+		// required: true
+		Product models.Product
+	}
 	router.POST("", func(c *gin.Context) {
 		var product models.Product
 		if err := c.ShouldBindJSON(&product); err != nil {
@@ -113,7 +133,7 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusCreated, params.ProductParam{Product: product})
+		c.JSON(http.StatusCreated, ProductParam{Product: product})
 	})
 }
 
@@ -149,6 +169,9 @@ func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Produces:
 //		- application/json
+//
+//		Security:
+//		  jwt:
 //
 //		Responses:
 //		  default: GenericError
