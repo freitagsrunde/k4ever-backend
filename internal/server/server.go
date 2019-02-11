@@ -46,6 +46,7 @@ func Start(config k4ever.Config) {
 	app.Run(fmt.Sprintf(":%d", config.HttpServerPort()))
 }
 
+// swagger:model
 type login struct {
 	Username string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -64,6 +65,8 @@ func getIdentity(claims jwt.MapClaims) interface{} {
 
 // This is just for swagger
 
+// The returned token
+//
 // swagger:model
 type Token struct {
 	Code   string `json:"code"`
@@ -71,7 +74,14 @@ type Token struct {
 	Token  string `json:"token"`
 }
 
-// swagger:route POST /login/ auth login
+// swagger:parameters authenticate
+type authenticateParams struct {
+	// in: body
+	// required: true
+	Login login
+}
+
+// swagger:route POST /login/ auth authenticate
 //
 // Return a jwt token on login
 //
@@ -83,8 +93,8 @@ type Token struct {
 //
 //		Responses:
 //		  default: GenericError
-//		  401: GenericError
 //		  200: Token
+//		  401: GenericError
 func authenticate(c *gin.Context) (interface{}, error) {
 	var loginVars login
 	var user models.User
