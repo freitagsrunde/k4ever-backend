@@ -2,8 +2,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/gin-contrib/cors"
 	"time"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -32,7 +33,6 @@ func Start(config k4ever.Config) {
 		MaxRefresh: time.Hour,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*models.User); ok {
-				fmt.Print(v.UserName)
 				return jwt.MapClaims{
 					"id":   v.ID,
 					"name": v.UserName,
