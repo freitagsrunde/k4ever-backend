@@ -2,12 +2,12 @@ package server
 
 import (
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"time"
 
 	"github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,7 +18,12 @@ var configForAuth k4ever.Config
 func Start(config k4ever.Config) {
 	configForAuth = config
 	app := gin.Default()
-	app.Use(cors.Default())
+	//app.Use(cors.Default())
+
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	app.Use(cors.New(corsConfig))
 
 	authMiddleware = &jwt.GinJWTMiddleware{
 		Realm:      "emtpy",          // TODO
