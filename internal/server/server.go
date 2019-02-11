@@ -68,25 +68,7 @@ func getIdentity(claims jwt.MapClaims) interface{} {
 	return user
 }
 
-// This is just for swagger
-
-// The returned token
-//
-// swagger:model
-type Token struct {
-	Code   string `json:"code"`
-	Expire string `json:"expire"`
-	Token  string `json:"token"`
-}
-
-// swagger:parameters authenticate
-type authenticateParams struct {
-	// in: body
-	// required: true
-	Login login
-}
-
-// swagger:route POST /login/ auth authenticate
+// swagger:route POST /login/ auth authenticateP
 //
 // Return a jwt token on login
 //
@@ -98,7 +80,7 @@ type authenticateParams struct {
 //
 //		Responses:
 //		  default: GenericError
-//		  200: Token
+//		  200: TokenResponse
 //		  401: GenericError
 func authenticate(c *gin.Context) (interface{}, error) {
 	var loginVars login
@@ -114,4 +96,29 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	}
 
 	return &user, nil
+}
+
+// A token with an expiry date
+//
+// swagger:response
+type TokenResponse struct {
+	// in: body
+	Token Token
+}
+
+// This is just for swagger
+
+// The returned token
+//
+// swagger:model Token
+type Token struct {
+	Code   string `json:"code"`
+	Expire string `json:"expire"`
+	Token  string `json:"token"`
+}
+
+// swagger:parameters authenticateP
+type authenticateParams struct {
+	// in: body
+	Login login
 }

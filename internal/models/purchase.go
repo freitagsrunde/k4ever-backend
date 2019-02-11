@@ -1,24 +1,34 @@
 package models
 
-import "github.com/jinzhu/gorm"
+// swagger:model
+type PurchaseItem struct {
+	Model
 
-type Item struct {
-	gorm.Model
-	Amount     int
-	Product    Product
-	ProductID  uint
-	PurchaseID uint
+	// The amount of products bought
+	Amount int `json:"amount"`
+
+	// Information about the bought product
+	Product Product `json:"product"`
+
+	ProductID  uint `json:"-"`
+	PurchaseID uint `json:"-"`
 }
 
 // swagger:model
 type Purchase struct {
-	gorm.Model
-	Amount float64
-	Items  []Item
-	UserID uint
+	Model
+
+	// The total amount of the purchase
+	Amount float64 `json:"amount"`
+
+	// A list of all items from the purchase
+	Items []PurchaseItem `json:"items"`
+
+	UserID uint `json:"-"`
 }
 
 // swagger:model
 type PurchaseArray struct {
-	Purchases []Purchase
+	// An array of purchases
+	Purchases []Purchase `json:"purchases"`
 }

@@ -1,7 +1,5 @@
 package models
 
-import "github.com/jinzhu/gorm"
-
 // A generic Permission
 //
 // swagger:model
@@ -13,7 +11,7 @@ type Permission struct {
 	// min: 1
 	//
 	// example: 1
-	gorm.Model
+	Model
 
 	// The name of the permission
 	//

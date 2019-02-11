@@ -1,7 +1,5 @@
 package models
 
-import "github.com/jinzhu/gorm"
-
 // A generic product
 //
 // A generic product with some values
@@ -15,7 +13,7 @@ type Product struct {
 	// min: 1
 	//
 	// example: 1
-	gorm.Model
+	Model
 
 	// The name of the product
 	//
@@ -23,10 +21,32 @@ type Product struct {
 	// min: 1
 	//
 	// example: club mate
-	Name        string  `json:"name" gorm:"not_null"`
-	Price       float64 `gorm:"not_null"`
-	Description string  `gorm:"type:text;"`
-	Deposit     float64
-	Barcode     string
-	Image       string
+	Name string `json:"name" gorm:"not_null"`
+
+	// The price of the product
+	//
+	// required: true
+	//
+	// example: 1.00
+	Price float64 `json:"price" gorm:"not_null"`
+
+	// The description of the product
+	//
+	// required: false
+	Description string `json:"description" gorm:"type:text;"`
+
+	// An optional deposit meant for drinks
+	//
+	// required: false
+	Deposit float64 `json:"deposit"`
+
+	// The barcode of the product
+	//
+	// required: false
+	Barcode string `json:"barcode"`
+
+	// Currently the path to the image (tbi)
+	//
+	// required: false
+	Image string `json:"image"`
 }

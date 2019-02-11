@@ -194,7 +194,7 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			return
 		}
 		purchase := models.Purchase{Amount: product.Price}
-		item := models.Item{Amount: 1, Product: product, ProductID: product.ID}
+		item := models.PurchaseItem{Amount: 1, Product: product, ProductID: product.ID}
 		// Create PurchaseItem
 		if err := tx.Create(&item).Error; err != nil {
 			tx.Rollback()

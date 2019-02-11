@@ -121,9 +121,6 @@ type newUser struct {
 func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters createUser
 	type CreateUserParams struct {
-		// in: path
-		// required: true
-		Id string `json:"id"`
 		// in: body
 		// required: true
 		NewUser newUser
