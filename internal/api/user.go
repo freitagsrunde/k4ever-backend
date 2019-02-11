@@ -78,9 +78,9 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 	type getUserParams struct {
 		// in:path
 		// required: true
-		Id int `json:"id"`
+		Name string `json:"name"`
 	}
-	router.GET(":id", func(c *gin.Context) {
+	router.GET(":name/", func(c *gin.Context) {
 		var user models.User
 		var err error
 		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
@@ -171,23 +171,24 @@ func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
 	type AddPermissionParam struct {
 		// in: path
 		// required: true
-		Id string `json:"id"`
+		Name string `json:"name"`
 		// in: body
 		// required: true
 		Permission models.Permission
 	}
-	router.PUT(":id/permissions/", func(c *gin.Context) {
+	router.PUT(":name/permissions/", func(c *gin.Context) {
 		var user models.User
+		var err error
 		var permission models.Permission
-		if err := c.ShouldBindJSON(&permission); err != nil {
+		if err = c.ShouldBindJSON(&permission); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := config.DB().Where("id = ?", c.Param("id")).First(&user).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
-		if err := config.DB().Where("name = ?", permission.Name).First(&permission).Error; err != nil {
+		if err = config.DB().Where("name = ?", permission.Name).First(&permission).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
@@ -230,27 +231,27 @@ func addBalance(router *gin.RouterGroup, config k4ever.Config) {
 	type AddBalanceParams struct {
 		// in: path
 		// required: true
-		Id string `json:"id"`
+		Name string `json:"name"`
 
 		// in: body
 		// required: true
 		Balance Balance
 	}
-	router.PUT(":id/balance/", func(c *gin.Context) {
+	router.PUT(":name/balance/", func(c *gin.Context) {
 		var user models.User
+		var err error
 		var balance Balance
 		if err := c.ShouldBindJSON(&balance); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 		tx := config.DB().Begin()
-		if err := tx.Where("id = ?", c.Param("id")).First(&user).Error; err != nil {
-			tx.Rollback()
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No such user id"})
+		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
 		user.Balance = user.Balance + balance.Amount
-		if err := tx.Save(&user).Error; err != nil {
+		if err = tx.Save(&user).Error; err != nil {
 			tx.Rollback()
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
