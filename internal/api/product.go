@@ -59,7 +59,7 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
 		}
-		c.JSON(http.StatusOK, ProductsResponse{Products: products})
+		c.JSON(http.StatusOK, products)
 	})
 }
 
@@ -133,7 +133,7 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusCreated, ProductParam{Product: product})
+		c.JSON(http.StatusCreated, product)
 	})
 }
 
