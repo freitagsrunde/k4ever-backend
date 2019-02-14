@@ -11,6 +11,7 @@ import (
 
 func NewApiTest() (app *gin.Engine, router *gin.RouterGroup, conf k4ever.Config) {
 	conf = test.NewConfig()
+	conf.MigrateDB()
 	gin.SetMode(gin.TestMode)
 	app = gin.New()
 
