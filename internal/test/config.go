@@ -1,6 +1,15 @@
 package test
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/freitagsrunde/k4ever-backend/internal/models"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
+)
+
+func init() {
+	conf := NewConfig()
+	conf.MigrateDB()
+}
 
 type Config struct {
 	db *gorm.DB
@@ -15,7 +24,10 @@ func (c *Config) AppVersion() string {
 }
 
 func (c *Config) DB() *gorm.DB {
-	return nil
+	if c.db == nil {
+		c.connectToDatabase()
+	}
+	return c.db
 }
 
 func (c *Config) HttpServerPort() int {
@@ -23,9 +35,20 @@ func (c *Config) HttpServerPort() int {
 }
 
 func (c *Config) connectToDatabase() error {
-	return nil
+	db, err := gorm.Open("sqlite3", ":memory:")
+	c.db = db
+
+	return err
 }
 
 func (c *Config) MigrateDB() {
+	db := c.DB()
 
+	db.AutoMigrate(
+		&models.Product{},
+		&models.User{},
+		&models.Permission{},
+		&models.Purchase{},
+		&models.PurchaseItem{},
+	)
 }
