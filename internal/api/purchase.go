@@ -48,6 +48,6 @@ func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 			return
 		}
-		c.JSON(http.StatusOK, models.PurchaseArray{Purchases: purchases})
+		c.JSON(http.StatusOK, purchases)
 	})
 }
