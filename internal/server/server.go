@@ -2,13 +2,13 @@ package server
 
 import (
 	"fmt"
-	"strconv"
 	"time"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -19,7 +19,12 @@ var configForAuth k4ever.Config
 func Start(config k4ever.Config) {
 	configForAuth = config
 	app := gin.Default()
-	app.Use(cors.Default())
+	//app.Use(cors.Default())
+
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	app.Use(cors.New(corsConfig))
 
 	authMiddleware = &jwt.GinJWTMiddleware{
 		Realm:      "emtpy",          // TODO
@@ -29,12 +34,13 @@ func Start(config k4ever.Config) {
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*models.User); ok {
 				return jwt.MapClaims{
-					"id": v.ID,
+					"id":   v.ID,
+					"name": v.UserName,
 				}
 			}
 			return nil
 		},
-		// IdentityHandler: getIdentity,
+		//IdentityHandler: getIdentity,
 		Authenticator: authenticate,
 	}
 
@@ -45,6 +51,7 @@ func Start(config k4ever.Config) {
 	app.Run(fmt.Sprintf(":%d", config.HttpServerPort()))
 }
 
+// swagger:model
 type login struct {
 	Username string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -52,14 +59,29 @@ type login struct {
 
 func getIdentity(claims jwt.MapClaims) interface{} {
 	user := &models.User{}
-	uid, err := strconv.ParseUint(claims["id"].(string), 10, 64)
+	//uid, err := strconv.ParseUint(claims["id"].(string), 10, 64)
+	err := configForAuth.DB().Where("user_name = ?", claims["name"].(string)).First(&user).Error
 	if err != nil {
 		return nil
 	}
-	user.ID = uint(uid)
+	//user.ID = uint(uid)
 	return user
 }
 
+// swagger:route POST /login/ auth authenticateP
+//
+// Return a jwt token on login
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  200: TokenResponse
+//		  401: GenericError
 func authenticate(c *gin.Context) (interface{}, error) {
 	var loginVars login
 	var user models.User
@@ -74,4 +96,29 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	}
 
 	return &user, nil
+}
+
+// A token with an expiry date
+//
+// swagger:response
+type TokenResponse struct {
+	// in: body
+	Token Token
+}
+
+// This is just for swagger
+
+// The returned token
+//
+// swagger:model Token
+type Token struct {
+	Code   string `json:"code"`
+	Expire string `json:"expire"`
+	Token  string `json:"token"`
+}
+
+// swagger:parameters authenticateP
+type authenticateParams struct {
+	// in: body
+	Login login
 }

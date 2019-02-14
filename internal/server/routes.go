@@ -10,7 +10,6 @@ func registerRoutes(app *gin.Engine, config k4ever.Config) {
 	v1 := app.Group("/api/v1/")
 	{
 		api.ProductRoutesPublic(v1, config)
-		api.AuthRoutesPublic(v1, config)
 		v1.POST("/login/", authMiddleware.LoginHandler)
 		api.UserRoutesPrivate(v1, config)
 	}

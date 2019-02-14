@@ -18,7 +18,32 @@ func PermissionRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	}
 }
 
+// swagger:route GET /permissions/ permissions getPermissions
+//
+// Lists all permsissions
+//
+// This will show all permissions by default
+//
+// 		Produces:
+//		- application/json
+//
+//		Security:
+//		  jwt:
+//
+//		Responses:
+//		  default: GenericError
+//		  200: PermissionsResponse
+//        404: GenericError
 func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
+	// A PermissionsResponse returns a list of products
+	//
+	// swagger:response
+	type PermissionsResponse struct {
+		// An array of permissions
+		//
+		// in: body
+		Permissions []models.Permission
+	}
 	router.GET("", func(c *gin.Context) {
 		var permissions []models.Permission
 		if err := config.DB().Find(&permissions).Error; err != nil {
@@ -29,7 +54,27 @@ func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route GET /permissions/{id} permissions getPermission
+//
+// Get detailed information of a permission
+//
+// 		Produces:
+//   	- application/json
+//
+//      Security:
+//		  jwt:
+//
+//		Responses:
+// 		  default: GenericError
+//		  200: Permission
+//		  404: GenericError
 func getPermission(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getPermission
+	type getPermissionParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
 	router.GET(":id", func(c *gin.Context) {
 		var permission models.Permission
 		if err := config.DB().Find(&permission).Error; err != nil {
@@ -40,7 +85,32 @@ func getPermission(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
+// swagger:route POST /permission/ permissions createPermission
+//
+// Create a new permission
+//
+// Creating a permission has no real function yet, since they arent
+// being checked anywhere
+// This will probably be a role in the future with fixef permissions
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  201: Permission
+//		  400: GenericError
+//        500: GenericError
 func createPermission(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters createPermission
+	type CreatePermissionsParams struct {
+		// in: body
+		// required: true
+		Permission models.Permission
+	}
 	router.POST("", func(c *gin.Context) {
 		var permission models.Permission
 		if err := c.ShouldBindJSON(&permission); err != nil {
