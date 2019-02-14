@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -12,7 +13,9 @@ func TestGetProducts(t *testing.T) {
 
 	getProducts(router, conf)
 
-	result := PerformRequest(app, "GET", "/api/v1/products/")
+	result := PerformRequest(app, "GET", "/api/v1")
+
+	fmt.Println(router)
 
 	assert.Equal(t, http.StatusOK, result.Code)
 }
