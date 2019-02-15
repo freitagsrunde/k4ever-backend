@@ -13,8 +13,6 @@ import (
 func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
-		getProducts(products, config)
-		getProduct(products, config)
 		getProductImage(products, config)
 	}
 }
@@ -23,7 +21,10 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
 		createProduct(products, config)
+		getProducts(products, config)
+		getProduct(products, config)
 		buyProduct(products, config)
+		favouriteProduct(products, config)
 	}
 }
 
@@ -55,9 +56,21 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET("", func(c *gin.Context) {
 		var products []models.Product
-		if err := config.DB().Find(&products).Error; err != nil {
+		if err := config.DB().Preload("FavoredBy").Find(&products).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
+		}
+		claims := jwt.ExtractClaims(c)
+		name := claims["name"].(string)
+		if name != "" {
+			for i := range products {
+				for _, b := range products[i].FavoredBy {
+					if name == b.UserName {
+						products[i].IsFavourite = true
+						break
+					}
+				}
+			}
 		}
 		c.JSON(http.StatusOK, products)
 	})
@@ -88,9 +101,19 @@ func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET(":id/", func(c *gin.Context) {
 		var product models.Product
-		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+		if err := config.DB().Preload("FavoredBy").Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
+		}
+		// Extract name from jwt and search for that in favourites
+		claims := jwt.ExtractClaims(c)
+		name := claims["name"]
+		if name != "" {
+			for _, b := range product.FavoredBy {
+				if name == b.UserName {
+					product.IsFavourite = true
+				}
+			}
 		}
 		c.JSON(http.StatusOK, product)
 	})
@@ -228,5 +251,66 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 		}
 		tx.Commit()
 		c.JSON(http.StatusOK, purchase)
+	})
+}
+
+// swagger:route POST /products/{id}/favourite/ favouriteProduct
+//
+// Add the product to the user favourites
+//
+//		Produces:
+//		- application/json
+//
+//		Security:
+//		  jwt:
+//
+//		Responses:
+//		  default: GenericError
+//		  200: product
+//		  400: GenericError
+//		  404: GenericError
+//        500: GenericError
+func favouriteProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters favouriteProduct
+	type favouriteProductParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
+	router.POST(":id/favourite/", func(c *gin.Context) {
+		var product models.Product
+		tx := config.DB().Begin()
+		// Get the product
+		if err := tx.Preload("FavoredBy").Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+			tx.Rollback()
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		// Get the user
+		var user models.User
+		claims := jwt.ExtractClaims(c)
+		userID := claims["id"]
+		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
+			tx.Rollback()
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
+			return
+		}
+		product.IsFavourite = true
+		// Check if user is already in FavoredBy list
+		for _, n := range product.FavoredBy {
+			if user.UserName == n.UserName {
+				tx.Commit()
+				c.JSON(http.StatusOK, product)
+				return
+			}
+		}
+		product.FavoredBy = append(product.FavoredBy, user)
+		if err := tx.Save(&product).Error; err != nil {
+			tx.Rollback()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		tx.Commit()
+		c.JSON(http.StatusOK, product)
 	})
 }

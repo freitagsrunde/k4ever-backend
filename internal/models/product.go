@@ -49,4 +49,9 @@ type Product struct {
 	//
 	// required: false
 	Image string `json:"image"`
+
+	// Wether the product is a favourite of the logged in user
+	IsFavourite bool `json:"favourite" gorm:"-"`
+
+	FavoredBy []User `json:"-" gorm:"many2many:product_users;"`
 }

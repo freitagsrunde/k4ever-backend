@@ -3,7 +3,7 @@ package context
 import (
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/spf13/viper"
 )
 
@@ -37,7 +37,7 @@ func (c *Config) HttpServerPort() int {
 }
 
 func (c *Config) connectToDatabase() error {
-	db, err := gorm.Open("postgres", "host=localhost port=5432 user=postgres dbname=postgres password=postgres")
+	db, err := gorm.Open("sqlite3", "test.db")
 	c.db = db
 
 	return err
