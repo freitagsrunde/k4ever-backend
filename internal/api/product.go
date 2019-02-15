@@ -61,8 +61,8 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 			return
 		}
 		claims := jwt.ExtractClaims(c)
-		name := claims["name"].(string)
-		if name != "" {
+		if val, ok := claims["name"]; ok {
+			name := val.(string)
 			for i := range products {
 				for _, b := range products[i].FavoredBy {
 					if name == b.UserName {
@@ -107,8 +107,8 @@ func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 		}
 		// Extract name from jwt and search for that in favourites
 		claims := jwt.ExtractClaims(c)
-		name := claims["name"]
-		if name != "" {
+		if val, ok := claims["name"]; ok {
+			name := val.(string)
 			for _, b := range product.FavoredBy {
 				if name == b.UserName {
 					product.IsFavourite = true
