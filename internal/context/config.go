@@ -37,7 +37,7 @@ func (c *Config) HttpServerPort() int {
 }
 
 func (c *Config) connectToDatabase() error {
-	db, err := gorm.Open("postgres", "host=localhost port=5432 user=postgres dbname=postgres password=postgres")
+	db, err := gorm.Open("postgres", "host=postgres port=5432 user=postgres dbname=postgres password=postgres")
 	c.db = db
 
 	return err
