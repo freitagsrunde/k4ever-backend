@@ -19,7 +19,7 @@ type Purchase struct {
 	Model
 
 	// The total amount of the purchase
-	Amount float64 `json:"amount"`
+	Total float64 `json:"total"`
 
 	// A list of all items from the purchase
 	Items []PurchaseItem `json:"items"`
