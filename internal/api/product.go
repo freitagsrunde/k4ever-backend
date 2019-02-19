@@ -193,7 +193,7 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-		purchase := models.Purchase{Amount: product.Price}
+		purchase := models.Purchase{Total: product.Price}
 		item := models.PurchaseItem{Amount: 1, Product: product, ProductID: product.ID}
 		// Create PurchaseItem
 		if err := tx.Create(&item).Error; err != nil {
