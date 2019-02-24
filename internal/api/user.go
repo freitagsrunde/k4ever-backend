@@ -96,7 +96,7 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 // swagger:model
 type newUser struct {
 	UserName    string `json:"name"`
-	Password    string `json:"password""`
+	Password    string `json:"password"`
 	DisplayName string `json:"display_name"`
 }
 
@@ -132,8 +132,11 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		user.UserName = bind.UserName
+		user.Password = bind.Password
 		user.DisplayName = bind.DisplayName
+
 		if err := k4ever.CreateUser(&user, config); err != nil {
 			if strings.HasPrefix(err.Error(), "Username") {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
