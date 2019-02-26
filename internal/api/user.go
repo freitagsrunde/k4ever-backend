@@ -57,7 +57,7 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route GET /users/{id}/ user getUser
+// swagger:route GET /users/{name}/ user getUser
 //
 // Get detailed information of a user
 //
@@ -149,7 +149,7 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route PUT /users/{id}/permissions/ user permission addPermissionToUser
+// swagger:route PUT /users/{name}/permissions/ user permission addPermissionToUser
 //
 // Add permission to user
 //
@@ -207,7 +207,7 @@ type Balance struct {
 	Amount float64
 }
 
-// swagger:route PUT /users/{id}/balance/ user balance addBalance
+// swagger:route PUT /users/{name}/balance/ user balance addBalance
 //
 // Add balance
 //
