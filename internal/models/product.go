@@ -49,4 +49,9 @@ type Product struct {
 	//
 	// required: false
 	Image string `json:"image"`
+
+	// A flag to show if the product is currently buyable
+	//
+	// required: false
+	Disabled bool `json:"disabled"`
 }
