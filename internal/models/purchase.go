@@ -8,7 +8,7 @@ type PurchaseItem struct {
 	Amount int `json:"amount"`
 
 	// Information about the bought product
-	Product Product `json:"product"`
+	Product
 
 	ProductID  uint `json:"-"`
 	PurchaseID uint `json:"-"`

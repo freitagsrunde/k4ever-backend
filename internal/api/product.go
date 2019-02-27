@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	jwt "github.com/appleboy/gin-jwt"
@@ -193,8 +192,15 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+
 		purchase := models.Purchase{Total: product.Price}
-		item := models.PurchaseItem{Amount: 1, Product: product, ProductID: product.ID}
+		item := models.PurchaseItem{Amount: 1}
+		item.Name = product.Name
+		item.Price = product.Price
+		item.Description = product.Description
+		item.Deposit = product.Deposit
+		item.Barcode = product.Barcode
+		item.Image = product.Image
 		// Create PurchaseItem
 		if err := tx.Create(&item).Error; err != nil {
 			tx.Rollback()
@@ -208,11 +214,10 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
 		// Update Balance
 		var user models.User
 		claims := jwt.ExtractClaims(c)
-		fmt.Print(claims["id"])
-		fmt.Print(claims["name"])
 		userID := claims["id"]
 		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
 			tx.Rollback()
