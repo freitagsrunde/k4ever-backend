@@ -10,7 +10,7 @@ type PurchaseItem struct {
 	// Information about the bought product
 	ProductInformation
 
-	ProductID  uint `json:"-"`
+	ProductID  uint `json:"product_id"`
 	PurchaseID uint `json:"-"`
 }
 
