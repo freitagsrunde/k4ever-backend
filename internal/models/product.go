@@ -15,6 +15,10 @@ type Product struct {
 	// example: 1
 	Model
 
+	ProductInformation
+}
+
+type ProductInformation struct {
 	// The name of the product
 	//
 	// required: true
