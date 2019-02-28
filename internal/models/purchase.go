@@ -2,7 +2,7 @@ package models
 
 // swagger:model
 type PurchaseItem struct {
-	Model
+	ModelTimes
 
 	// The amount of products bought
 	Amount int `json:"amount"`
@@ -16,7 +16,7 @@ type PurchaseItem struct {
 
 // swagger:model
 type Purchase struct {
-	Model
+	ModelTimes
 
 	// The total amount of the purchase
 	Total float64 `json:"total"`
