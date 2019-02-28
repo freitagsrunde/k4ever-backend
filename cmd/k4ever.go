@@ -12,8 +12,6 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "k4ever",
 	Short: "k4ever is a shopping site",
-	Run: func(cmd *cobra.Command, args []string) {
-	},
 }
 
 // Handles all global flags
