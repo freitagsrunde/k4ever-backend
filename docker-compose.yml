@@ -10,6 +10,8 @@ services:
 
   k4ever:
     image: freitagsrunde/k4ever-backend
+    build:
+      context: .
     links:
       - "postgres"
     ports:
