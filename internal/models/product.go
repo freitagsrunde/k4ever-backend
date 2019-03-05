@@ -25,7 +25,7 @@ type ProductInformation struct {
 	// min: 1
 	//
 	// example: club mate
-	Name string `json:"name" gorm:"not_null"`
+	Name string `json:"name" gorm:"not_null;unique"`
 
 	// The price of the product
 	//
@@ -47,7 +47,7 @@ type ProductInformation struct {
 	// The barcode of the product
 	//
 	// required: false
-	Barcode string `json:"barcode"`
+	Barcode string `json:"barcode" gorm:"unique;default: null"`
 
 	// Currently the path to the image (tbi)
 	//
