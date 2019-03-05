@@ -15,13 +15,17 @@ type Product struct {
 	// example: 1
 	Model
 
+	ProductInformation
+}
+
+type ProductInformation struct {
 	// The name of the product
 	//
 	// required: true
 	// min: 1
 	//
 	// example: club mate
-	Name string `json:"name" gorm:"not_null"`
+	Name string `json:"name" gorm:"not_null;unique"`
 
 	// The price of the product
 	//
@@ -43,7 +47,7 @@ type Product struct {
 	// The barcode of the product
 	//
 	// required: false
-	Barcode string `json:"barcode"`
+	Barcode string `json:"barcode" gorm:"unique;default: null"`
 
 	// Currently the path to the image (tbi)
 	//

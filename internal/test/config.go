@@ -19,8 +19,20 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
-func (c *Config) AppVersion() string {
+func (c *Config) Version() string {
 	return "1.0"
+}
+
+func (c *Config) GitCommit() string {
+	return "commit"
+}
+
+func (c *Config) GitBranch() string {
+	return "test"
+}
+
+func (c *Config) BuildTime() string {
+	return "now"
 }
 
 func (c *Config) DB() *gorm.DB {
