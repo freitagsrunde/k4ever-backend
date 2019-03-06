@@ -201,9 +201,8 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "The product is disabled and cannot be bought"})
 			return
 		}
-    
-    purchase := models.Purchase{Total: product.Price}
-		item := models.PurchaseItem{Amount: 1, Product: product, ProductID: product.ID}
+
+		purchase := models.Purchase{Total: product.Price}
 		item := models.PurchaseItem{Amount: 1}
 		item.ProductID = product.ID
 		item.Name = product.Name
