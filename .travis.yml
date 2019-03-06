@@ -24,7 +24,7 @@ script:
   - go test -v -race ./...
 
 after_success:
-  - docker build -t freitagsrunde/k4ever-backend .
+  - make docker-build
 
 deploy:
   provider: script
