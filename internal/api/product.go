@@ -43,6 +43,13 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 //		  200: productsResponse
 //		  404: GenericError
 func getProducts(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getProducts
+	type getProductsParams struct {
+		// in: query
+		// required: false
+		SortBy string `json:"sort_by"`
+	}
+
 	// A ProductsResponse returns a list of products
 	//
 	// swagger:response productsResponse
@@ -53,6 +60,8 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 		Products []models.Product
 	}
 	router.GET("", func(c *gin.Context) {
+		// sortBy := c.DefaultQuery("sort_by", "Name")
+
 		var products []models.Product
 		if err := config.DB().Find(&products).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
