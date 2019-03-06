@@ -1,17 +1,10 @@
 package k4ever
 
 import (
-	"fmt"
-
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
 
 func GetProducts(username string, config Config) (products []models.Product, err error) {
-	type countWithID struct {
-		ID               uint
-		TimesBoughtTotal int
-	}
-
 	if err := config.DB().Find(&products).Error; err != nil {
 		return []models.Product{}, err
 	}
@@ -49,12 +42,9 @@ func GetProducts(username string, config Config) (products []models.Product, err
 	for rows2.Next() {
 		var id uint
 		var count int
-		fmt.Println("lolo")
 		if errSql := rows2.Scan(&id, &count); errSql != nil {
 			return []models.Product{}, errSql
 		}
-		fmt.Println(id)
-		fmt.Println(count)
 		product := productMap[id]
 		product.TimesBought = count
 		productMap[id] = product
@@ -69,6 +59,25 @@ func GetProducts(username string, config Config) (products []models.Product, err
 	}
 
 	return products, nil
+}
+
+func GetProduct(productID string, username string, config Config) (product models.Product, err error) {
+	if err := config.DB().First(&product).Where("id = ?", productID).Error; err != nil {
+		return models.Product{}, err
+	}
+
+	var count int
+	if err := config.DB().Table("purchase_items").Select("product_id, count(product_id)").Group("product_id").Count(&count).Error; err != nil {
+		return models.Product{}, err
+	}
+	product.TimesBoughtTotal = count
+
+	if err := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Count(&count).Error; err != nil {
+		return models.Product{}, err
+	}
+	product.TimesBought = count
+
+	return product, nil
 }
 
 func CreateProduct(product *models.Product, config Config) (err error) {
