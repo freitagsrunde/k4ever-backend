@@ -197,6 +197,10 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
+		if product.Disabled == true {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "The product is disabled and cannot be bought"})
+			return
+		}
 
 		purchase := models.Purchase{Total: product.Price}
 		item := models.PurchaseItem{Amount: 1}
