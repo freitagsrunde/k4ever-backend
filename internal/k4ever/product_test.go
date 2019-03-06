@@ -75,9 +75,22 @@ func TestGetProducts(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 
-	products, err := GetProducts("name", conf)
+	user := models.User{}
+	user.UserName = "user"
+	user.Password = "password"
+	user.DisplayName = "displayname"
 
+	err2 := CreateUser(&user, conf)
+
+	assert.Equal(t, nil, err2)
+
+	_, err3 := BuyProduct("1", "user", conf)
+
+	assert.Equal(t, nil, err3)
+
+	products, err4 := GetProducts("name", conf)
+
+	assert.Equal(t, nil, err4)
 	assert.Equal(t, 1, len(products))
-	assert.Equal(t, uint(0), products[0].TimesBoughtTotal)
-	assert.Equal(t, nil, err)
+	assert.Equal(t, 1, products[0].TimesBoughtTotal)
 }

@@ -54,7 +54,7 @@ type ProductInformation struct {
 	// required: false
 	Image string `json:"image"`
 
-	TimesBoughtTotal uint `json:"-"`
+	TimesBoughtTotal int `json:"times_bought_total"`
 
-	TimesBought uint `json:"times_bought"`
+	TimesBought int `json:"times_bought"`
 }

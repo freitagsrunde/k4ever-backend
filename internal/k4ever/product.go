@@ -1,20 +1,71 @@
 package k4ever
 
 import (
+	"fmt"
+
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
 
 func GetProducts(username string, config Config) (products []models.Product, err error) {
+	type countWithID struct {
+		ID               uint
+		TimesBoughtTotal int
+	}
+
 	if err := config.DB().Find(&products).Error; err != nil {
 		return []models.Product{}, err
 	}
 
-	if err := config.DB().Table("purchase_items").Select("product_id as id, count(product_id) as times_bought_total").Group("product_id").Error; err != nil {
+	productMap := make(map[uint]models.Product)
+	var i int
+	for i = 0; i < len(products); i++ {
+		productMap[products[i].ID] = products[i]
+	}
+
+	rows, err := config.DB().Table("purchase_items").Select("product_id, count(product_id)").Group("product_id").Rows()
+	if err != nil {
 		return []models.Product{}, err
 	}
 
-	if err := config.DB().Table("purchase_items").Select("product_id as id, count(product_id) as times_bought").Joins("join purchase on purchase.id = purchase_items.purchase_id").Joins("join user on user.id = purchase.user_id").Where("user.user_name = ?", username).Group("product_id").Error; err != nil {
+	for rows.Next() {
+		var id uint
+		var count int
+		if errSql := rows.Scan(&id, &count); errSql != nil {
+			return []models.Product{}, errSql
+		}
+		product := productMap[id]
+		product.TimesBoughtTotal = count
+		productMap[id] = product
+	}
+
+	if err := rows.Err(); err != nil {
 		return []models.Product{}, err
+	}
+
+	rows2, err2 := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Rows()
+	if err2 != nil {
+		return []models.Product{}, err2
+	}
+	for rows2.Next() {
+		var id uint
+		var count int
+		fmt.Println("lolo")
+		if errSql := rows2.Scan(&id, &count); errSql != nil {
+			return []models.Product{}, errSql
+		}
+		fmt.Println(id)
+		fmt.Println(count)
+		product := productMap[id]
+		product.TimesBought = count
+		productMap[id] = product
+	}
+
+	if err := rows2.Err(); err != nil {
+		return []models.Product{}, err
+	}
+
+	for i = 0; i < len(products); i++ {
+		products[i] = productMap[products[i].ID]
 	}
 
 	return products, nil
