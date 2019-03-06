@@ -12,7 +12,6 @@ import (
 func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
-		getProducts(products, config)
 		getProduct(products, config)
 		getProductImage(products, config)
 	}
@@ -21,6 +20,7 @@ func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
+		getProducts(products, config)
 		createProduct(products, config)
 		buyProduct(products, config)
 	}
@@ -61,9 +61,11 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET("", func(c *gin.Context) {
 		// sortBy := c.DefaultQuery("sort_by", "Name")
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
 
-		var products []models.Product
-		if err := config.DB().Find(&products).Error; err != nil {
+		products, err := k4ever.GetProducts(username.(string), config)
+		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
 		}
