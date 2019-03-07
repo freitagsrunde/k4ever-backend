@@ -4,58 +4,21 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
 
-func GetProducts(username string, config Config) (products []models.Product, err error) {
-	if err := config.DB().Find(&products).Error; err != nil {
-		return []models.Product{}, err
-	}
-
-	productMap := make(map[uint]models.Product)
-	var i int
-	for i = 0; i < len(products); i++ {
-		productMap[products[i].ID] = products[i]
-	}
-
-	rows, err := config.DB().Table("purchase_items").Select("product_id, count(product_id)").Group("product_id").Rows()
+func GetProducts(username string, order string, config Config) (products []models.Product, err error) {
+	rows, err := config.DB().Table("products p").Select("*, COALESCE((?), 0) as most_bought, COALESCE((?), 0) as most_bought_total", config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr(), config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()).Group("id").Order("order").Rows()
 	if err != nil {
 		return []models.Product{}, err
 	}
-
 	for rows.Next() {
-		var id uint
-		var count int
-		if errSql := rows.Scan(&id, &count); errSql != nil {
+		var p models.Product
+		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.TimesBoughtTotal, &p.TimesBought); errSql != nil {
 			return []models.Product{}, errSql
 		}
-		product := productMap[id]
-		product.TimesBoughtTotal = count
-		productMap[id] = product
+		products = append(products, p)
 	}
 
 	if err := rows.Err(); err != nil {
 		return []models.Product{}, err
-	}
-
-	rows2, err2 := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Rows()
-	if err2 != nil {
-		return []models.Product{}, err2
-	}
-	for rows2.Next() {
-		var id uint
-		var count int
-		if errSql := rows2.Scan(&id, &count); errSql != nil {
-			return []models.Product{}, errSql
-		}
-		product := productMap[id]
-		product.TimesBought = count
-		productMap[id] = product
-	}
-
-	if err := rows2.Err(); err != nil {
-		return []models.Product{}, err
-	}
-
-	for i = 0; i < len(products); i++ {
-		products[i] = productMap[products[i].ID]
 	}
 
 	return products, nil

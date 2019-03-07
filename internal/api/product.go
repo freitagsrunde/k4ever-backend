@@ -60,11 +60,11 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 		Products []models.Product
 	}
 	router.GET("", func(c *gin.Context) {
-		// sortBy := c.DefaultQuery("sort_by", "Name")
+		sortBy := c.DefaultQuery("sort_by", "name")
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]
 
-		products, err := k4ever.GetProducts(username.(string), config)
+		products, err := k4ever.GetProducts(username.(string), sortBy, config)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
@@ -196,54 +196,21 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 		Id int `json:"id"`
 	}
 	router.POST(":id/buy/", func(c *gin.Context) {
-		var product models.Product
-		tx := config.DB().Begin()
-		// Get Product
-		if err := tx.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-
-		purchase := models.Purchase{Total: product.Price}
-		item := models.PurchaseItem{Amount: 1}
-		item.ProductID = product.ID
-		item.Name = product.Name
-		item.Price = product.Price
-		item.Description = product.Description
-		item.Deposit = product.Deposit
-		item.Barcode = product.Barcode
-		item.Image = product.Image
-		// Create PurchaseItem
-		if err := tx.Create(&item).Error; err != nil {
-			tx.Rollback()
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		purchase.Items = append(purchase.Items, item)
-		// Create Purchase
-		if err := tx.Create(&purchase).Error; err != nil {
-			tx.Rollback()
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Update Balance
-		var user models.User
 		claims := jwt.ExtractClaims(c)
-		userID := claims["id"]
-		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
-			tx.Rollback()
+		username := claims["name"]
+		if username == nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
 			return
 		}
-		user.Balance = user.Balance - product.Price
-		user.Purchases = append(user.Purchases, purchase)
-		if err := tx.Save(&user).Error; err != nil {
-			tx.Rollback()
+		purchase, err := k4ever.BuyProduct(c.Param("id"), username.(string), config)
+		if err != nil {
+			if err.Error() == "record not found" {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		tx.Commit()
 		c.JSON(http.StatusOK, purchase)
 	})
 }
