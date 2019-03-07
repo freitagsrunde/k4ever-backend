@@ -61,10 +61,11 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET("", func(c *gin.Context) {
 		sortBy := c.DefaultQuery("sort_by", "name")
+		order := c.DefaultQuery("order", "asc")
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]
 
-		products, err := k4ever.GetProducts(username.(string), sortBy, config)
+		products, err := k4ever.GetProducts(username.(string), sortBy, order, config)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return

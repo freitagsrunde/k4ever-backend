@@ -4,8 +4,8 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
 
-func GetProducts(username string, order string, config Config) (products []models.Product, err error) {
-	rows, err := config.DB().Table("products p").Select("*, COALESCE((?), 0) as most_bought, COALESCE((?), 0) as most_bought_total", config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr(), config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()).Group("id").Order("order").Rows()
+func GetProducts(username string, sort_by string, order string, config Config) (products []models.Product, err error) {
+	rows, err := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr(), config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()).Group("id").Order(sort_by + " " + order).Rows()
 	if err != nil {
 		return []models.Product{}, err
 	}
