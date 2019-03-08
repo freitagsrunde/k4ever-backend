@@ -8,6 +8,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func GetUsers(sort_by string, order string, config Config) (users []models.User, err error) {
+	if err = config.DB().Find(&users).Order(sort_by + " " + order).Error; err != nil {
+		return []models.User{}, err
+	}
+	return users, err
+}
+
 func GetUser(name string, config Config) (user models.User, err error) {
 	if err = config.DB().Where("user_name = ?", name).First(&user).Error; err != nil {
 		return models.User{}, err

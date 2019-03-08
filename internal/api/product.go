@@ -48,6 +48,10 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 		// in: query
 		// required: false
 		SortBy string `json:"sort_by"`
+
+		// in: query
+		// required: false
+		Order string `json:"order"`
 	}
 
 	// A ProductsResponse returns a list of products

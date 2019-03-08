@@ -38,6 +38,17 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 // 	 	  200: UsersResponse
 //		  404: GenericError
 func getUsers(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters getUsers
+	type getProductsParams struct {
+		// in: query
+		// required: false
+		SortBy string `json:"sort_by"`
+
+		// in: query
+		// required: false
+		Order string `json:"order"`
+	}
+
 	// A UsersResponse returns a list of users
 	//
 	// swagger:response
@@ -48,9 +59,11 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 		Users []models.User
 	}
 	router.GET("", func(c *gin.Context) {
-		var users []models.User
-		if err := config.DB().Find(&users).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No user was found"})
+		sortBy := c.DefaultQuery("sort_by", "user_name")
+		order := c.DefaultQuery("order", "asc")
+		users, err := k4ever.GetUsers(sortBy, order, config)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 			return
 		}
 		c.JSON(http.StatusOK, users)
