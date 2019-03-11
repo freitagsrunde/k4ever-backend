@@ -17,7 +17,7 @@ func ProductTest() (testProduct models.Product) {
 	testProduct.Price = 1.0
 	testProduct.Description = "A description"
 	testProduct.Deposit = 0.0
-	testProduct.Barcode = "12345678"
+	testProduct.Barcode.String = "12345678"
 
 	return testProduct
 }

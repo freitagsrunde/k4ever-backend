@@ -47,7 +47,7 @@ type ProductInformation struct {
 	// The barcode of the product
 	//
 	// required: false
-	Barcode string `json:"barcode" gorm:"unique;default: null"`
+	Barcode NullString `json:"barcode" gorm:"unique;default: null"`
 
 	// Currently the path to the image (tbi)
 	//
@@ -60,5 +60,5 @@ type ProductInformation struct {
 	// A flag to show if the product is currently buyable
 	//
 	// required: false
-	Disabled bool `json:"disabled"`
+	Disabled bool `json:"disabled" gorm:"default:false"`
 }

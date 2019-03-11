@@ -3,7 +3,6 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -154,10 +153,6 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 			return
 		}
 		if err := config.DB().Create(&product).Error; err != nil {
-			if strings.Contains(err.Error(), "UNIQUE") {
-				c.JSON(http.StatusOK, gin.H{"error": err.Error()})
-				return
-			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -204,6 +199,7 @@ func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
 //		Responses:
 //		  default: GenericError
 //		  200: Purchase
+//		  400: GenericError
 //		  404: GenericError
 //        500: GenericError
 func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
@@ -224,6 +220,10 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 		if err != nil {
 			if err.Error() == "record not found" {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+				return
+			}
+			if err.Error() == "The product is disabled and cannot be bought" {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

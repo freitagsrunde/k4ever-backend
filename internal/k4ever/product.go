@@ -1,6 +1,8 @@
 package k4ever
 
 import (
+	"errors"
+
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
 
@@ -26,7 +28,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	}
 	for rows.Next() {
 		var p models.Product
-		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.TimesBoughtTotal, &p.TimesBought); errSql != nil {
+		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.Disabled, &p.TimesBoughtTotal, &p.TimesBought); errSql != nil {
 			return []models.Product{}, errSql
 		}
 		products = append(products, p)
@@ -74,6 +76,10 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 		return models.Purchase{}, err
 	}
 
+	if product.Disabled == true {
+		return models.Purchase{}, errors.New("The product is disabled and cannot be bought")
+	}
+
 	purchase = models.Purchase{Total: product.Price}
 	item := models.PurchaseItem{Amount: 1}
 	item.ProductID = product.ID
@@ -81,7 +87,7 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 	item.Price = product.Price
 	item.Description = product.Description
 	item.Deposit = product.Deposit
-	item.Barcode = product.Barcode
+	item.Barcode = product.Barcode.String
 	item.Image = product.Image
 
 	// Create PurchaseItem

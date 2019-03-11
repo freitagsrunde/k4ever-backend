@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"database/sql"
+	"encoding/json"
+	"time"
+)
 
 // gorm.Model definition
 type Model struct {
@@ -35,4 +39,21 @@ type DefaultParams struct {
 	// in: query
 	// required: false
 	Limit int `json:"limit"`
+}
+
+type NullString struct {
+	sql.NullString
+}
+
+func (ns NullString) MarshalJSON() ([]byte, error) {
+	if !ns.Valid {
+		return []byte("\"\""), nil
+	}
+	return json.Marshal(ns.String)
+}
+
+func (ns *NullString) UnmarshalJSON(b []byte) error {
+	err := json.Unmarshal(b, &ns.String)
+	ns.Valid = (err == nil)
+	return err
 }
