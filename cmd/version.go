@@ -3,12 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/freitagsrunde/k4ever-backend/internal/context"
-	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/spf13/cobra"
 )
-
-var config k4ever.Config
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
@@ -21,6 +17,5 @@ var versionCmd = &cobra.Command{
 }
 
 func init() {
-	config = context.NewConfig()
 	rootCmd.AddCommand(versionCmd)
 }
