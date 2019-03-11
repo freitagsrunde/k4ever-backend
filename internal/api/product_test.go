@@ -8,8 +8,6 @@ func TestGetProducts(t *testing.T) {
 
 	result := PerformRequest(app, "GET", "/api/v1")
 
-	fmt.Println(router)
-
 	assert.Equal(t, http.StatusOK, result.Code)
 }
 */

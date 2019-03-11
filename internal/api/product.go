@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -153,6 +154,10 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 			return
 		}
 		if err := config.DB().Create(&product).Error; err != nil {
+			if strings.Contains(err.Error(), "UNIQUE") {
+				c.JSON(http.StatusOK, gin.H{"error": err.Error()})
+				return
+			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
