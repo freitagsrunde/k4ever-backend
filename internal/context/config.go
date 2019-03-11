@@ -75,16 +75,16 @@ func (c *Config) HttpServerPort() int {
 }
 
 func (c *Config) connectToDatabase() error {
-	host := k4ever.GetEnv("DBHOST", "postgres")
-	portS := k4ever.GetEnv("DBPORT", "5432")
+	host := k4ever.GetEnv("K4EVER_DBHOST", "postgres")
+	portS := k4ever.GetEnv("K4EVER_DBPORT", "5432")
 	port, err := strconv.Atoi(portS)
 	if err != nil {
 		return err
 	}
-	user := k4ever.GetEnv("DBUSER", "postgres")
-	dbname := k4ever.GetEnv("DBNAME", "postgres")
-	password := k4ever.GetEnv("DBPASS", "postgres")
-	sslmode := k4ever.GetEnv("DBSSL", "disable")
+	user := k4ever.GetEnv("K4EVER_DBUSER", "postgres")
+	dbname := k4ever.GetEnv("K4EVER_DBNAME", "postgres")
+	password := k4ever.GetEnv("K4EVER_DBPASS", "postgres")
+	sslmode := k4ever.GetEnv("K4EVER_DBSSL", "disable")
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=%s", host, port, user, dbname, password, sslmode))
 	c.db = db
 
