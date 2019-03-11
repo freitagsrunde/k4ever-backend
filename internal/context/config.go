@@ -1,6 +1,8 @@
 package context
 
 import (
+	"fmt"
+
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -8,21 +10,46 @@ import (
 )
 
 type Config struct {
-	appVersion     string
+	version        string
 	db             *gorm.DB
 	httpServerPort int
+	gitCommit      string
+	gitBranch      string
+	buildTime      string
 }
+
+var GitCommit = "undefined"
+var GitBranch = "undefined"
+var BuildTime = "No Time provided"
+var version string
 
 func NewConfig() *Config {
 	c := &Config{}
-	c.appVersion = viper.GetString("version")
+	// c.AppVersion = viper.GetString("version")
+	fmt.Println(version)
+	c.version = version
 	c.httpServerPort = viper.GetInt("port")
+	c.gitCommit = GitCommit
+	c.gitBranch = GitBranch
+	c.buildTime = BuildTime
 
 	return c
 }
 
-func (c *Config) AppVersion() string {
-	return c.appVersion
+func (c *Config) Version() string {
+	return c.version
+}
+
+func (c *Config) GitCommit() string {
+	return c.gitCommit
+}
+
+func (c *Config) GitBranch() string {
+	return c.gitBranch
+}
+
+func (c *Config) BuildTime() string {
+	return c.buildTime
 }
 
 func (c *Config) DB() *gorm.DB {
@@ -37,7 +64,7 @@ func (c *Config) HttpServerPort() int {
 }
 
 func (c *Config) connectToDatabase() error {
-	db, err := gorm.Open("sqlite3", "test.db")
+	db, err := gorm.Open("postgres", "host=postgres port=5432 user=postgres dbname=postgres password=postgres sslmode=disable")
 	c.db = db
 
 	return err

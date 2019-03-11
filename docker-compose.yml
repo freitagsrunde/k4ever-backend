@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - k4ever-db:/var/lib/postgresql/data
+
+  k4ever:
+    image: freitagsrunde/k4ever-backend
+    links:
+      - "postgres"
+    ports:
+      - "8080:8080"
+    command: "start"
+    depends_on:
+      - postgres
+
+volumes:
+  k4ever-db:

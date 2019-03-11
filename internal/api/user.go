@@ -57,7 +57,7 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route GET /users/{id}/ user getUser
+// swagger:route GET /users/{name}/ user getUser
 //
 // Get detailed information of a user
 //
@@ -96,7 +96,7 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 // swagger:model
 type newUser struct {
 	UserName    string `json:"name"`
-	Password    string `json:"password""`
+	Password    string `json:"password"`
 	DisplayName string `json:"display_name"`
 }
 
@@ -132,8 +132,11 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		user.UserName = bind.UserName
+		user.Password = bind.Password
 		user.DisplayName = bind.DisplayName
+
 		if err := k4ever.CreateUser(&user, config); err != nil {
 			if strings.HasPrefix(err.Error(), "Username") {
 				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -146,7 +149,7 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route PUT /users/{id}/permissions/ user permission addPermissionToUser
+// swagger:route PUT /users/{name}/permissions/ user permission addPermissionToUser
 //
 // Add permission to user
 //
@@ -204,7 +207,7 @@ type Balance struct {
 	Amount float64
 }
 
-// swagger:route PUT /users/{id}/balance/ user balance addBalance
+// swagger:route PUT /users/{name}/balance/ user balance addBalance
 //
 // Add balance
 //

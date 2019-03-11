@@ -15,7 +15,7 @@ func PurchaseRoutes(router *gin.RouterGroup, config k4ever.Config) {
 	}
 }
 
-// swagger:route GET /users/{id]/purchases/ users purchases getPurchaseHistory
+// swagger:route GET /users/{name}/purchases/ users purchases getPurchaseHistory
 //
 // Get a list of all purchases
 //
@@ -25,12 +25,12 @@ func PurchaseRoutes(router *gin.RouterGroup, config k4ever.Config) {
 //		Security:
 //        jwt:
 //
-//		Repsonses:
+//		Responses:
 //		  default: GenericError
 //		  200: PurchaseArray
 //		  400: GenericError
 func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
-	// swagger:parameters
+	// swagger:parameters getPurchaseHistory
 	type getPurchaseHistoryParams struct {
 		// in: path
 		// required: true
