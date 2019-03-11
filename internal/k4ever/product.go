@@ -4,8 +4,23 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
 
-func GetProducts(username string, sort_by string, order string, config Config) (products []models.Product, err error) {
-	rows, err := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr(), config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()).Group("id").Order(sort_by + " " + order).Rows()
+func GetProducts(username string, params models.DefaultParams, config Config) (products []models.Product, err error) {
+	// Subquery to get the sum of purchases for each product
+	sumProductsTotal := config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr()
+
+	// Subquery to get the sum of purchases by the logged in user for each product
+	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
+
+	// Query to get all product information
+	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", sumProductsTotal, sumProductsUser).Group("id").Order(params.SortBy + " " + params.Order)
+	if params.Offset != 0 {
+		tx = tx.Offset(params.Offset)
+	}
+	if params.Limit != 0 {
+		tx = tx.Limit(params.Limit)
+	}
+
+	rows, err := tx.Rows()
 	if err != nil {
 		return []models.Product{}, err
 	}

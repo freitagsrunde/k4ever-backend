@@ -8,8 +8,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetUsers(sort_by string, order string, config Config) (users []models.User, err error) {
-	if err = config.DB().Find(&users).Order(sort_by + " " + order).Error; err != nil {
+func GetUsers(params models.DefaultParams, config Config) (users []models.User, err error) {
+	tx := config.DB()
+	if params.Offset != 0 {
+		tx = tx.Offset(params.Offset)
+	}
+	if params.Limit != 0 {
+		tx = tx.Limit(params.Limit)
+	}
+	if err = tx.Find(&users).Order(params.SortBy + " " + params.Order).Error; err != nil {
 		return []models.User{}, err
 	}
 	return users, err

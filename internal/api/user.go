@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -38,17 +39,6 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 // 	 	  200: UsersResponse
 //		  404: GenericError
 func getUsers(router *gin.RouterGroup, config k4ever.Config) {
-	// swagger:parameters getUsers
-	type getProductsParams struct {
-		// in: query
-		// required: false
-		SortBy string `json:"sort_by"`
-
-		// in: query
-		// required: false
-		Order string `json:"order"`
-	}
-
 	// A UsersResponse returns a list of users
 	//
 	// swagger:response
@@ -59,9 +49,28 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 		Users []models.User
 	}
 	router.GET("", func(c *gin.Context) {
-		sortBy := c.DefaultQuery("sort_by", "user_name")
-		order := c.DefaultQuery("order", "asc")
-		users, err := k4ever.GetUsers(sortBy, order, config)
+		var err error
+		params := models.DefaultParams{}
+		params.SortBy = c.DefaultQuery("sort_by", "user_name")
+		params.Order = c.DefaultQuery("order", "asc")
+		offset := c.Query("offset")
+		if offset != "" {
+			params.Offset, err = strconv.Atoi(offset)
+		}
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "offset is not a number"})
+			return
+		}
+		limit := c.Query("limit")
+		if limit != "" {
+			params.Limit, err = strconv.Atoi(limit)
+		}
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "limit is not a number"})
+			return
+		}
+
+		users, err := k4ever.GetUsers(params, config)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 			return

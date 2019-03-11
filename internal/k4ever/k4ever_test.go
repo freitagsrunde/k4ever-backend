@@ -29,3 +29,9 @@ func UserTest() (testUser models.User) {
 
 	return testUser
 }
+
+func DefaultParamsTest() (params models.DefaultParams) {
+	params.Order = "asc"
+
+	return params
+}

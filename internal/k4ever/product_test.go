@@ -40,7 +40,9 @@ func TestBuyProduct(t *testing.T) {
 func TestGetProductsEmpty(t *testing.T) {
 	conf := NewK4everTest()
 
-	products, err := GetProducts("name", "name", "asc", conf)
+	params := DefaultParamsTest()
+	params.SortBy = "name"
+	products, err := GetProducts("name", params, conf)
 
 	assert.Equal(t, 0, len(products))
 	assert.Equal(t, nil, err)
@@ -63,7 +65,9 @@ func TestGetProducts(t *testing.T) {
 
 	assert.Equal(t, nil, err3)
 
-	products, err4 := GetProducts(testUser.UserName, "name", "asc", conf)
+	params := DefaultParamsTest()
+	params.SortBy = "name"
+	products, err4 := GetProducts(testUser.UserName, params, conf)
 
 	assert.Equal(t, nil, err4)
 	assert.Equal(t, 1, len(products))
