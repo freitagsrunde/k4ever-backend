@@ -28,6 +28,7 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/cmd"
 )
 
+//go:generate swagger generate spec -o ./swagger.yml
 func main() {
 	cmd.Execute()
 }
