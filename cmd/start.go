@@ -28,6 +28,8 @@ func init() {
 func startServer(cmd *cobra.Command, args []string) {
 	fmt.Printf("Starting web server on port %d...\n", port)
 
+	config.SetHttpServerPort(viper.GetInt("port"))
+
 	server.Start(config)
 
 	fmt.Println("Done.")

@@ -12,6 +12,7 @@ type Config interface {
 	GitBranch() string
 	BuildTime() string
 	DB() *gorm.DB
+	SetHttpServerPort(port int)
 	HttpServerPort() int
 	MigrateDB()
 }

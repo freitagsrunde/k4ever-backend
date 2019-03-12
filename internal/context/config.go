@@ -70,6 +70,10 @@ func (c *Config) DB() *gorm.DB {
 	return c.db
 }
 
+func (c *Config) SetHttpServerPort(port int) {
+	c.httpServerPort = port
+}
+
 func (c *Config) HttpServerPort() int {
 	return c.httpServerPort
 }
