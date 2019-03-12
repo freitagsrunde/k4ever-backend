@@ -2,7 +2,10 @@ package context
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
+	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -12,6 +15,11 @@ import (
 type Config struct {
 	version        string
 	db             *gorm.DB
+	dbHost         string
+	dbPort         int
+	dbName         string
+	dbPass         string
+	dbSSLMode      string
 	httpServerPort int
 	gitCommit      string
 	gitBranch      string
@@ -54,7 +62,10 @@ func (c *Config) BuildTime() string {
 
 func (c *Config) DB() *gorm.DB {
 	if c.db == nil {
-		c.connectToDatabase()
+		if err := c.connectToDatabase(); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
 	}
 	return c.db
 }
@@ -64,7 +75,17 @@ func (c *Config) HttpServerPort() int {
 }
 
 func (c *Config) connectToDatabase() error {
-	db, err := gorm.Open("postgres", "host=postgres port=5432 user=postgres dbname=postgres password=postgres sslmode=disable")
+	host := k4ever.GetEnv("K4EVER_DBHOST", "postgres")
+	portS := k4ever.GetEnv("K4EVER_DBPORT", "5432")
+	port, err := strconv.Atoi(portS)
+	if err != nil {
+		return err
+	}
+	user := k4ever.GetEnv("K4EVER_DBUSER", "postgres")
+	dbname := k4ever.GetEnv("K4EVER_DBNAME", "postgres")
+	password := k4ever.GetEnv("K4EVER_DBPASS", "postgres")
+	sslmode := k4ever.GetEnv("K4EVER_DBSSL", "disable")
+	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=%s", host, port, user, dbname, password, sslmode))
 	c.db = db
 
 	return err
