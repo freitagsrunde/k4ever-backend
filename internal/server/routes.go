@@ -15,6 +15,7 @@ func registerRoutes(app *gin.Engine, config k4ever.Config) {
 		v1.POST("/login/", authMiddleware.LoginHandler)
 		api.UserRoutesPrivate(v1, config)
 		api.VersionRoutesPublic(v1, config)
+		api.SwaggerRoutesPublic(v1, config)
 	}
 	v1Private := app.Group("/api/v1/")
 	{
