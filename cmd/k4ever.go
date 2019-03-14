@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/freitagsrunde/k4ever-backend/internal/context"
+	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -14,12 +16,18 @@ var rootCmd = &cobra.Command{
 	Short: "k4ever is a shopping site",
 }
 
+var config k4ever.Config
+
 // Handles all global flags
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringP("version", "", "1.0.0", "The programs current version")
 	viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
 	viper.SetDefault("version", "0.0.1")
+
+	config = context.NewConfig()
+
+	config.MigrateDB()
 }
 
 func initConfig() {

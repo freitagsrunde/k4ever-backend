@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/freitagsrunde/k4ever-backend/internal/context"
 	"github.com/freitagsrunde/k4ever-backend/internal/server"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,9 +28,7 @@ func init() {
 func startServer(cmd *cobra.Command, args []string) {
 	fmt.Printf("Starting web server on port %d...\n", port)
 
-	config := context.NewConfig()
-
-	config.MigrateDB()
+	config.SetHttpServerPort(viper.GetInt("port"))
 
 	server.Start(config)
 
