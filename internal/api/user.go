@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -48,9 +49,30 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 		Users []models.User
 	}
 	router.GET("", func(c *gin.Context) {
-		var users []models.User
-		if err := config.DB().Find(&users).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "No user was found"})
+		var err error
+		params := models.DefaultParams{}
+		params.SortBy = c.DefaultQuery("sort_by", "user_name")
+		params.Order = c.DefaultQuery("order", "asc")
+		offset := c.Query("offset")
+		if offset != "" {
+			params.Offset, err = strconv.Atoi(offset)
+		}
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "offset is not a number"})
+			return
+		}
+		limit := c.Query("limit")
+		if limit != "" {
+			params.Limit, err = strconv.Atoi(limit)
+		}
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "limit is not a number"})
+			return
+		}
+
+		users, err := k4ever.GetUsers(params, config)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 			return
 		}
 		c.JSON(http.StatusOK, users)
