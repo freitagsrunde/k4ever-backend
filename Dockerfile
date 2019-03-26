@@ -1,5 +1,7 @@
 FROM golang AS builder
 
+ENV GO111MODULE=on
+
 WORKDIR $GOPATH/src/github.com/freitagsrunde/k4ever-backend/
 COPY . .
 
