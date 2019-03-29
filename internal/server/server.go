@@ -1,7 +1,9 @@
 package server
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -11,6 +13,7 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	ldap "gopkg.in/ldap.v2"
 )
 
 var authMiddleware *jwt.GinJWTMiddleware
@@ -88,14 +91,90 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	if err := c.ShouldBindJSON(&loginVars); err != nil {
 		return nil, jwt.ErrMissingLoginValues
 	}
+	// TODO check ldap
+	conn, err := connect(configForAuth)
+
+	if err != nil {
+		fmt.Println("Could not connect to ldap")
+	} else {
+		err = ldapAuth(loginVars.Username, loginVars.Password, conn, configForAuth)
+		if err == nil {
+			// TODO create user if not in db
+			user.UserName = loginVars.Username
+			if err = configForAuth.DB().Where("user_name = ?", loginVars.Username).FirstOrCreate(&user).Error; err != nil {
+				return nil, err
+			}
+			return &user, nil
+		}
+	}
+
+	// Check local db
 	if err := configForAuth.DB().Where("user_name = ?", loginVars.Username).First(&user).Error; err != nil {
+		// TODO wait on failure
 		return nil, jwt.ErrFailedAuthentication
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginVars.Password)); err != nil {
+		// TODO wait on failure
 		return nil, err
 	}
 
 	return &user, nil
+}
+
+// TODO ldapServer, ldapBind, ldapPassword
+func connect(config k4ever.Config) (*ldap.Conn, error) {
+	conn, err := ldap.Dial("tcp", config.LdapHost())
+
+	if err != nil {
+		return nil, errors.New("Failed to connect to ldap server")
+	}
+
+	if err := conn.Bind(config.LdapBind(), config.LdapPassword()); err != nil {
+		return nil, errors.New("Failed to bind to ldap server")
+	}
+	return conn, nil
+}
+
+func ldapAuth(user string, password string, conn *ldap.Conn, config k4ever.Config) error {
+	result, err := conn.Search(ldap.NewSearchRequest(
+		config.LdapBaseDN(),
+		ldap.ScopeWholeSubtree,
+		ldap.NeverDerefAliases,
+		0,
+		0,
+		false,
+		filter(user, config),
+		[]string{"dn"},
+		nil,
+	))
+
+	if err != nil {
+		return fmt.Errorf("Failed to find user: %s", user)
+	}
+
+	if len(result.Entries) < 1 {
+		return fmt.Errorf("User does not exist")
+	}
+
+	if len(result.Entries) > 1 {
+		return fmt.Errorf("Too many entries returned")
+	}
+
+	if err := conn.Bind(result.Entries[0].DN, password); err != nil {
+		fmt.Errorf("Failed to auth. %s", err)
+	}
+	return nil
+}
+
+func filter(needle string, config k4ever.Config) string {
+	res := strings.Replace(
+		// TODO write filter
+		config.LdapFilterDN(),
+		"{username}",
+		needle,
+		-1,
+	)
+	return res
 }
 
 // A token with an expiry date
