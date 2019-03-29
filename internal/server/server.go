@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -91,50 +90,54 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	if err := c.ShouldBindJSON(&loginVars); err != nil {
 		return nil, jwt.ErrMissingLoginValues
 	}
-	// TODO check ldap
+
+	// Check ldap
 	conn, err := connect(configForAuth)
+	defer conn.Close()
 
 	if err != nil {
+		fmt.Println(err.Error())
 		fmt.Println("Could not connect to ldap")
 	} else {
 		err = ldapAuth(loginVars.Username, loginVars.Password, conn, configForAuth)
 		if err == nil {
-			// TODO create user if not in db
 			user.UserName = loginVars.Username
-			if err = configForAuth.DB().Where("user_name = ?", loginVars.Username).FirstOrCreate(&user).Error; err != nil {
+			if err = configForAuth.DB().Where("user_name = ?", loginVars.Username).FirstOrCreate(&user).Error; err == nil {
+				return &user, nil
+			} else {
 				return nil, err
 			}
-			return &user, nil
 		}
 	}
 
 	// Check local db
 	if err := configForAuth.DB().Where("user_name = ?", loginVars.Username).First(&user).Error; err != nil {
-		// TODO wait on failure
+		time.Sleep(200 * time.Millisecond)
 		return nil, jwt.ErrFailedAuthentication
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginVars.Password)); err != nil {
-		// TODO wait on failure
+		time.Sleep(200 * time.Millisecond)
 		return nil, err
 	}
 
 	return &user, nil
 }
 
-// TODO ldapServer, ldapBind, ldapPassword
+// Connect to ldap and return connection object
 func connect(config k4ever.Config) (*ldap.Conn, error) {
 	conn, err := ldap.Dial("tcp", config.LdapHost())
 
 	if err != nil {
-		return nil, errors.New("Failed to connect to ldap server")
+		return nil, fmt.Errorf("Failed to connect to ldap server: %s", config.LdapHost())
 	}
 
 	if err := conn.Bind(config.LdapBind(), config.LdapPassword()); err != nil {
-		return nil, errors.New("Failed to bind to ldap server")
+		return nil, fmt.Errorf("Failed to bind to ldap server: %s", config.LdapBind())
 	}
 	return conn, nil
 }
 
+// try to authenticate user against ldap
 func ldapAuth(user string, password string, conn *ldap.Conn, config k4ever.Config) error {
 	result, err := conn.Search(ldap.NewSearchRequest(
 		config.LdapBaseDN(),
@@ -153,7 +156,7 @@ func ldapAuth(user string, password string, conn *ldap.Conn, config k4ever.Confi
 	}
 
 	if len(result.Entries) < 1 {
-		return fmt.Errorf("User does not exist")
+		return fmt.Errorf("User does not exist: %s", user)
 	}
 
 	if len(result.Entries) > 1 {
@@ -168,7 +171,6 @@ func ldapAuth(user string, password string, conn *ldap.Conn, config k4ever.Confi
 
 func filter(needle string, config k4ever.Config) string {
 	res := strings.Replace(
-		// TODO write filter
 		config.LdapFilterDN(),
 		"{username}",
 		needle,
