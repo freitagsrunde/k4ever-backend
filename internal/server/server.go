@@ -126,7 +126,7 @@ func authenticate(c *gin.Context) (interface{}, error) {
 
 // Connect to ldap and return connection object
 func connect(config k4ever.Config) (*ldap.Conn, error) {
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	tlsConfig := &tls.Config{}
 	conn, err := ldap.DialTLS("tcp", config.LdapHost(), tlsConfig)
 
 	if err != nil {
