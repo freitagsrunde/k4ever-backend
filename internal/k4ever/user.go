@@ -44,22 +44,43 @@ func CreateUser(user *models.User, config Config) error {
 	return nil
 }
 
-func TransferToUser(from string, to string, amount float64, config Config) error {
+func AddBalance(username string, amount float64, config Config) (balance models.History, err error) {
+	tx := config.DB().Begin()
+
+	var user models.User
+	if user, err = GetUser(username, config); err != nil {
+		return models.History{}, err
+	}
+	user.Balance = user.Balance + amount
+	if err = tx.Save(&user).Error; err != nil {
+		tx.Rollback()
+		return models.History{}, err
+	}
+	balance = models.History{Total: amount, Type: models.BalanceHistory}
+	if err := tx.Create(&balance).Error; err != nil {
+		tx.Rollback()
+		return models.History{}, err
+	}
+	tx.Commit()
+	return balance, err
+}
+
+func TransferToUser(from string, to string, amount float64, config Config) (transfer models.History, err error) {
 	tx := config.DB().Begin()
 
 	// Fetch both users from the database
 	var fromUser models.User
 	var toUser models.User
 	if err := tx.Where("user_name = ?", from).First(&fromUser).Error; err != nil {
-		return err
+		return models.History{}, err
 	}
 	if err := tx.Where("user_name = ?", to).First(&toUser).Error; err != nil {
-		return err
+		return models.History{}, err
 	}
 
 	// Check if the amount is positive
 	if amount <= 0 {
-		return errors.New("amount must be positive")
+		return models.History{}, errors.New("amount must be positive")
 	}
 
 	// Update both accounts
@@ -67,12 +88,17 @@ func TransferToUser(from string, to string, amount float64, config Config) error
 	toUser.Balance = toUser.Balance + amount
 	if err := tx.Save(&fromUser).Error; err != nil {
 		tx.Rollback()
-		return err
+		return models.History{}, err
 	}
 	if err := tx.Save(&toUser).Error; err != nil {
 		tx.Rollback()
-		return err
+		return models.History{}, err
+	}
+	transfer = models.History{Total: amount, Type: models.TransferHistory, Recipient: toUser.UserName}
+	if err := tx.Create(&transfer).Error; err != nil {
+		tx.Rollback()
+		return models.History{}, err
 	}
 	tx.Commit()
-	return nil
+	return transfer, nil
 }

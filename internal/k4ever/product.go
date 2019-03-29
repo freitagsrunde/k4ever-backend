@@ -67,20 +67,20 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 	return nil
 }
 
-func BuyProduct(productID string, username string, config Config) (purchase models.Purchase, err error) {
+func BuyProduct(productID string, username string, config Config) (purchase models.History, err error) {
 	var product models.Product
 
 	tx := config.DB().Begin()
 	// Get Product
 	if err := tx.Where("id = ?", productID).First(&product).Error; err != nil {
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 
 	if product.Disabled == true {
-		return models.Purchase{}, errors.New("The product is disabled and cannot be bought")
+		return models.History{}, errors.New("The product is disabled and cannot be bought")
 	}
 
-	purchase = models.Purchase{Total: product.Price}
+	purchase = models.History{Total: product.Price, Type: models.PurchaseHistory}
 	item := models.PurchaseItem{Amount: 1}
 	item.ProductID = product.ID
 	item.Name = product.Name
@@ -93,25 +93,25 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 	// Create PurchaseItem
 	if err := tx.Create(&item).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	purchase.Items = append(purchase.Items, item)
 	// Create Purchase
 	if err := tx.Create(&purchase).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	// Update Balance
 	var user models.User
 	if err := tx.Where("user_name = ?", username).First(&user).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	user.Balance = user.Balance - product.Price
-	user.Purchases = append(user.Purchases, purchase)
+	user.Histories = append(user.Histories, purchase)
 	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	tx.Commit()
 	return purchase, nil
