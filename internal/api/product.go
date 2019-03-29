@@ -24,6 +24,7 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 		getProducts(products, config)
 		createProduct(products, config)
 		buyProduct(products, config)
+		likeProduct(products, config)
 	}
 }
 
@@ -230,5 +231,32 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			return
 		}
 		c.JSON(http.StatusOK, purchase)
+	})
+}
+
+func likeProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters likeProduct
+	type likeProductParams struct {
+		// in: path
+		// required: true
+		Id int `json:"id"`
+	}
+	router.POST(":id/like/", func(c *gin.Context) {
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+		if username == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
+			return
+		}
+		product, err := k4ever.LikeProduct(c.Param("id"), username.(string), config)
+		if err != nil {
+			if err.Error() == "record not found" {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, product)
 	})
 }

@@ -14,7 +14,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
 
 	// Query to get all product information
-	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", sumProductsTotal, sumProductsUser).Group("id").Order(params.SortBy + " " + params.Order)
+	tx := config.DB().Preload("Users").Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", sumProductsTotal, sumProductsUser).Group("id").Order(params.SortBy + " " + params.Order)
 	if params.Offset != 0 {
 		tx = tx.Offset(params.Offset)
 	}
@@ -42,7 +42,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 }
 
 func GetProduct(productID string, username string, config Config) (product models.Product, err error) {
-	if err := config.DB().First(&product).Where("id = ?", productID).Error; err != nil {
+	if err := config.DB().Preload("Users").Where("id = ?", productID).First(&product).Error; err != nil {
 		return models.Product{}, err
 	}
 
@@ -52,7 +52,17 @@ func GetProduct(productID string, username string, config Config) (product model
 	}
 	product.TimesBoughtTotal = count
 
-	if err := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Count(&count).Error; err != nil {
+	// Check wether product is liked by current User
+	var isLiked int
+	if err := config.DB().Table("users").Joins("JOIN liked_by ON liked_by.user_id = users.id").Joins("JOIN products on products.id = liked_by.product_id").Count(&isLiked).Error; err != nil {
+		return models.Product{}, err
+	}
+	// The number of rows will be at most 1
+	if isLiked > 0 {
+		product.IsLiked = true
+	}
+
+	if err = config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Count(&count).Error; err != nil {
 		return models.Product{}, err
 	}
 	product.TimesBought = count
@@ -115,4 +125,39 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 	}
 	tx.Commit()
 	return purchase, nil
+}
+
+func LikeProduct(productID string, username string, config Config) (product models.Product, err error) {
+	tx := config.DB().Begin()
+	// Get Product
+	if err = tx.Where("id = ?", productID).First(&product).Error; err != nil {
+		tx.Rollback()
+		return models.Product{}, err
+	}
+
+	// Get User
+	var user models.User
+	if err = tx.Where("user_name = ?", username).First(&user).Error; err != nil {
+		tx.Rollback()
+		return models.Product{}, err
+	}
+
+	// Check if user is already in list
+	for _, v := range product.Users {
+		if v.UserName == user.UserName {
+			return models.Product{}, errors.New("Already liked product")
+		}
+	}
+
+	// Update LikedBy list
+	product.Users = append(product.Users, user)
+	if err = tx.Save(&product).Error; err != nil {
+		tx.Rollback()
+		return models.Product{}, err
+	}
+
+	// Commit queries
+	tx.Commit()
+	product.IsLiked = true
+	return product, nil
 }

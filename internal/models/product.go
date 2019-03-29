@@ -16,6 +16,8 @@ type Product struct {
 	Model
 
 	ProductInformation
+
+	Users []User `json:"-" gorm:"many2many:liked_by;"`
 }
 
 type ProductInformation struct {
@@ -61,4 +63,9 @@ type ProductInformation struct {
 	//
 	// required: false
 	Disabled bool `json:"disabled" gorm:"default:false"`
+
+	// A flag to show if the current use has liked the product
+	//
+	// required: false
+	IsLiked bool `json:"is_liked" gorm:"-"`
 }

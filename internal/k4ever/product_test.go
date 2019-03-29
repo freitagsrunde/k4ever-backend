@@ -108,3 +108,29 @@ func TestGetProduct(t *testing.T) {
 	assert.Equal(t, 1, product.TimesBoughtTotal)
 	assert.Equal(t, 1, product.TimesBought)
 }
+
+func TestLikeProduct(t *testing.T) {
+	conf := NewK4everTest()
+
+	testProduct := ProductTest()
+	err := CreateProduct(&testProduct, conf)
+
+	assert.Equal(t, nil, err)
+
+	testUser := UserTest()
+	err = CreateUser(&testUser, conf)
+
+	assert.Equal(t, nil, err)
+
+	product, err := LikeProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, product.IsLiked)
+	assert.Equal(t, 1, len(product.Users))
+
+	product, err = GetProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, product.IsLiked)
+	assert.Equal(t, 1, len(product.Users))
+}
