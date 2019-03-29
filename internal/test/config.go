@@ -64,7 +64,7 @@ func (c *Config) MigrateDB() {
 		&models.Product{},
 		&models.User{},
 		&models.Permission{},
-		&models.Purchase{},
+		&models.History{},
 		&models.PurchaseItem{},
 	)
 }
