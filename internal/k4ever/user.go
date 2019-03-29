@@ -43,3 +43,36 @@ func CreateUser(user *models.User, config Config) error {
 	}
 	return nil
 }
+
+func TransferToUser(from string, to string, amount float64, config Config) error {
+	tx := config.DB().Begin()
+
+	// Fetch both users from the database
+	var fromUser models.User
+	var toUser models.User
+	if err := tx.Where("user_name = ?", from).First(&fromUser).Error; err != nil {
+		return err
+	}
+	if err := tx.Where("user_name = ?", to).First(&toUser).Error; err != nil {
+		return err
+	}
+
+	// Check if the amount is positive
+	if amount <= 0 {
+		return errors.New("amount must be positive")
+	}
+
+	// Update both accounts
+	fromUser.Balance = fromUser.Balance - amount
+	toUser.Balance = toUser.Balance + amount
+	if err := tx.Save(&fromUser).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Save(&toUser).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	tx.Commit()
+	return nil
+}
