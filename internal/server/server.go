@@ -1,9 +1,7 @@
 package server
 
 import (
-	"crypto/tls"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -12,8 +10,8 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
-	ldap "gopkg.in/ldap.v3"
 )
 
 var authMiddleware *jwt.GinJWTMiddleware
@@ -97,15 +95,16 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	defer conn.Close()
 
 	if err != nil {
-		fmt.Println(err.Error())
-		fmt.Println("Could not connect to ldap")
+		log.Debug("Could not connect to ldap, querying database")
 	} else {
 		err = ldapAuth(loginVars.Username, loginVars.Password, conn, configForAuth)
 		if err == nil {
 			user.UserName = loginVars.Username
 			if err = configForAuth.DB().Where("user_name = ?", loginVars.Username).FirstOrCreate(&user).Error; err == nil {
+				log.WithFields(log.Fields{"user": loginVars.Username}).Debug("Created user from ldap")
 				return &user, nil
 			} else {
+				log.Error("Could not insert user into database after authenticating against ldap")
 				return nil, err
 			}
 		}
@@ -113,72 +112,17 @@ func authenticate(c *gin.Context) (interface{}, error) {
 
 	// Check local db
 	if err := configForAuth.DB().Where("user_name = ?", loginVars.Username).First(&user).Error; err != nil {
+		log.Debug("Login failed: user not found")
 		time.Sleep(200 * time.Millisecond)
 		return nil, jwt.ErrFailedAuthentication
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginVars.Password)); err != nil {
+		log.Debug("Login failed: password was wrong")
 		time.Sleep(200 * time.Millisecond)
 		return nil, err
 	}
 
 	return &user, nil
-}
-
-// Connect to ldap and return connection object
-func connect(config k4ever.Config) (*ldap.Conn, error) {
-	tlsConfig := &tls.Config{}
-	conn, err := ldap.DialTLS("tcp", config.LdapHost(), tlsConfig)
-
-	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to ldap server: %s", config.LdapHost())
-	}
-
-	if err := conn.Bind(config.LdapBind(), config.LdapPassword()); err != nil {
-		return nil, fmt.Errorf("Failed to bind to ldap server: %s", config.LdapBind())
-	}
-	return conn, nil
-}
-
-// try to authenticate user against ldap
-func ldapAuth(user string, password string, conn *ldap.Conn, config k4ever.Config) error {
-	result, err := conn.Search(ldap.NewSearchRequest(
-		config.LdapBaseDN(),
-		ldap.ScopeWholeSubtree,
-		ldap.NeverDerefAliases,
-		0,
-		0,
-		false,
-		filter(user, config),
-		[]string{"dn"},
-		nil,
-	))
-
-	if err != nil {
-		return fmt.Errorf("Failed to find user: %s", user)
-	}
-
-	if len(result.Entries) < 1 {
-		return fmt.Errorf("User does not exist: %s", user)
-	}
-
-	if len(result.Entries) > 1 {
-		return fmt.Errorf("Too many entries returned")
-	}
-
-	if err := conn.Bind(result.Entries[0].DN, password); err != nil {
-		fmt.Errorf("Failed to auth. %s", err)
-	}
-	return nil
-}
-
-func filter(needle string, config k4ever.Config) string {
-	res := strings.Replace(
-		config.LdapFilterDN(),
-		"{username}",
-		needle,
-		-1,
-	)
-	return res
 }
 
 // A token with an expiry date
