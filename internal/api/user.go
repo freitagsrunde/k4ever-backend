@@ -43,7 +43,7 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 	//
 	// swagger:response
 	type UsersResponse struct {
-		// An array of products
+		// An array of users
 		//
 		// in: body
 		Users []models.User
@@ -122,7 +122,7 @@ type newUser struct {
 	DisplayName string `json:"display_name"`
 }
 
-// swagger:route POST /users/ product createUser
+// swagger:route POST /users/ users createUser
 //
 // Create a new user
 //
