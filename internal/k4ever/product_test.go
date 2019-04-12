@@ -61,7 +61,7 @@ func TestGetProducts(t *testing.T) {
 
 	assert.Equal(t, nil, err2)
 
-	_, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+	testHistory, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
 
 	assert.Equal(t, nil, err3)
 
@@ -73,6 +73,9 @@ func TestGetProducts(t *testing.T) {
 	assert.Equal(t, 1, len(products))
 	assert.Equal(t, 1, products[0].TimesBoughtTotal)
 	assert.Equal(t, 1, products[0].TimesBought)
+	// Check if times are equal
+	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(products[0].LastBought)
+	assert.Equal(t, true, timesAreEqual)
 }
 
 func TestGetProductEmpty(t *testing.T) {
@@ -98,7 +101,7 @@ func TestGetProduct(t *testing.T) {
 
 	assert.Equal(t, nil, err2)
 
-	_, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+	testHistory, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
 
 	assert.Equal(t, nil, err3)
 
@@ -107,4 +110,7 @@ func TestGetProduct(t *testing.T) {
 	assert.Equal(t, nil, err4)
 	assert.Equal(t, 1, product.TimesBoughtTotal)
 	assert.Equal(t, 1, product.TimesBought)
+	// Check if times are equal
+	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(product.LastBought)
+	assert.Equal(t, true, timesAreEqual)
 }
