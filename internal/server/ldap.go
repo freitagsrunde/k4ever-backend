@@ -1,7 +1,6 @@
 package server
 
 import (
-	"crypto/tls"
 	"fmt"
 	"strings"
 
@@ -11,8 +10,7 @@ import (
 
 // Connect to ldap and return connection object
 func connect(config k4ever.Config) (*ldap.Conn, error) {
-	tlsConfig := &tls.Config{}
-	conn, err := ldap.DialTLS("tcp", config.LdapHost(), tlsConfig)
+	conn, err := ldap.DialURL(config.LdapHost())
 
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect to ldap server: %s", config.LdapHost())
