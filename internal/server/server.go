@@ -10,6 +10,7 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -88,10 +89,36 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	if err := c.ShouldBindJSON(&loginVars); err != nil {
 		return nil, jwt.ErrMissingLoginValues
 	}
+
+	// Check ldap
+	conn, err := connect(configForAuth)
+	defer conn.Close()
+
+	if err != nil {
+		log.Debug("Could not connect to ldap, querying database")
+	} else {
+		err = ldapAuth(loginVars.Username, loginVars.Password, conn, configForAuth)
+		if err == nil {
+			user.UserName = loginVars.Username
+			if err = configForAuth.DB().Where("user_name = ?", loginVars.Username).FirstOrCreate(&user).Error; err == nil {
+				log.WithFields(log.Fields{"user": loginVars.Username}).Debug("Created user from ldap")
+				return &user, nil
+			} else {
+				log.Error("Could not insert user into database after authenticating against ldap")
+				return nil, err
+			}
+		}
+	}
+
+	// Check local db
 	if err := configForAuth.DB().Where("user_name = ?", loginVars.Username).First(&user).Error; err != nil {
+		log.Debug("Login failed: user not found")
+		time.Sleep(200 * time.Millisecond)
 		return nil, jwt.ErrFailedAuthentication
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginVars.Password)); err != nil {
+		log.Debug("Login failed: password was wrong")
+		time.Sleep(200 * time.Millisecond)
 		return nil, err
 	}
 

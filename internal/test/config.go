@@ -42,6 +42,26 @@ func (c *Config) DB() *gorm.DB {
 	return c.db
 }
 
+func (c *Config) LdapHost() string {
+	return "localhost"
+}
+
+func (c *Config) LdapBind() string {
+	return "admin"
+}
+
+func (c *Config) LdapPassword() string {
+	return "admin"
+}
+
+func (c *Config) LdapBaseDN() string {
+	return "CN=Users,DC=example,DC=com"
+}
+
+func (c *Config) LdapFilterDN() string {
+	return "(&(objectClass=person)(uid={username}))"
+}
+
 func (c *Config) SetHttpServerPort(port int) {
 	return
 }
