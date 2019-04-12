@@ -16,7 +16,7 @@ FROM alpine
 
 COPY --from=builder /go/bin/k4ever /go/bin/k4ever
 
-RUN chmod +x /go/bin/k4ever
+RUN chmod +x /go/bin/k4ever && apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["/go/bin/k4ever"]
 
