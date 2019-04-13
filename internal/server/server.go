@@ -92,21 +92,27 @@ func authenticate(c *gin.Context) (interface{}, error) {
 
 	// Check ldap
 	conn, err := connect(configForAuth)
-	defer conn.Close()
+	log.Debug("Testing")
 
 	if err != nil {
-		log.Debug("Could not connect to ldap, querying database")
-	} else {
+		log.WithFields(log.Fields{"error": err.Error()}).Debug("Could not connect to ldap, querying database")
+	}
+	if conn != nil {
+		defer conn.Close()
+	}
+	if err == nil {
 		err = ldapAuth(loginVars.Username, loginVars.Password, conn, configForAuth)
 		if err == nil {
 			user.UserName = loginVars.Username
 			if err = configForAuth.DB().Where("user_name = ?", loginVars.Username).FirstOrCreate(&user).Error; err == nil {
-				log.WithFields(log.Fields{"user": loginVars.Username}).Debug("Created user from ldap")
+				log.WithFields(log.Fields{"user": loginVars.Username}).Debug("Logged in via ldap")
 				return &user, nil
 			} else {
-				log.Error("Could not insert user into database after authenticating against ldap")
+				log.WithFields(log.Fields{"error": err.Error()}).Error("Could not query/update database after authenticating against ldap")
 				return nil, err
 			}
+		} else {
+			log.WithFields(log.Fields{"error": err.Error()}).Debug("Failed to authenticate against ldap. Trying database entries...")
 		}
 	}
 

@@ -17,6 +17,7 @@ func connect(config k4ever.Config) (*ldap.Conn, error) {
 	}
 
 	if err := conn.Bind(config.LdapBind(), config.LdapPassword()); err != nil {
+		fmt.Println(err.Error())
 		return nil, fmt.Errorf("Failed to bind to ldap server: %s", config.LdapBind())
 	}
 	return conn, nil
