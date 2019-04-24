@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"time"
+    "io/ioutil"
 
 	"github.com/gin-contrib/cors"
 
@@ -48,8 +49,15 @@ func Start(config k4ever.Config) {
 	// Register all routes to the api as well as the frontend
 	registerRoutes(app, config)
 
+    banner, err := ioutil.ReadFile("./internal/server/banner")
+    if err != nil {
+        fmt.Print(err)
+    }
+    fmt.Println(string(banner))
+
 	// Run the webserver
 	app.Run(fmt.Sprintf(":%d", config.HttpServerPort()))
+
 }
 
 // swagger:model
