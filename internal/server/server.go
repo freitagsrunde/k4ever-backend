@@ -49,7 +49,7 @@ func Start(config k4ever.Config) {
 	// Register all routes to the api as well as the frontend
 	registerRoutes(app, config)
 
-    banner, err := ioutil.ReadFile("./internal/server/banner")
+    banner, err := ioutil.ReadFile("./assets/banner")
     if err != nil {
         fmt.Print(err)
     }
@@ -57,7 +57,6 @@ func Start(config k4ever.Config) {
 
 	// Run the webserver
 	app.Run(fmt.Sprintf(":%d", config.HttpServerPort()))
-
 }
 
 // swagger:model
