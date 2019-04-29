@@ -43,11 +43,11 @@ func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
-		var purchases []models.Purchase
-		if err = config.DB().Preload("Items").Model(&user).Related(&purchases).Error; err != nil {
+		var histories []models.History
+		if err = config.DB().Preload("Items").Model(&user).Related(&histories).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 			return
 		}
-		c.JSON(http.StatusOK, purchases)
+		c.JSON(http.StatusOK, histories)
 	})
 }

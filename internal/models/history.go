@@ -10,8 +10,8 @@ type PurchaseItem struct {
 	// Information about the bought product
 	PurchaseItemInformation
 
-	ProductID  uint `json:"product_id"`
-	PurchaseID uint `json:"-"`
+	ProductID uint `json:"product_id"`
+	HistoryID uint `json:"-"`
 }
 
 type PurchaseItemInformation struct {
@@ -52,20 +52,30 @@ type PurchaseItemInformation struct {
 }
 
 // swagger:model
-type Purchase struct {
+type History struct {
 	ModelTimes
 
-	// The total amount of the purchase
+	// The total amount of the purchase or balance update
 	Total float64 `json:"total"`
 
+	// The type of the history item
+	Type string `json:"type"`
+
 	// A list of all items from the purchase
-	Items []PurchaseItem `json:"items"`
+	Items []PurchaseItem `json:"items,omitempty"`
+
+	// The recipient of the tranfer
+	Recipient string `json:"recipient,omitempty"`
 
 	UserID uint `json:"-"`
 }
 
+const PurchaseHistory = "purchase"
+const BalanceHistory = "balance"
+const TransferHistory = "transfer"
+
 // swagger:model
-type PurchaseArray struct {
+type HistoryArray struct {
 	// An array of purchases
-	Purchases []Purchase `json:"purchases"`
+	Histories []History `json:"purchases"`
 }

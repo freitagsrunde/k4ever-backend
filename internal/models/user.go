@@ -23,7 +23,7 @@ type User struct {
 	Permissions []Permission `json:"permissions" gorm:"many2many:user_permissions;"`
 
 	// A list of purchases made by the user
-	Purchases []Purchase `json:"purchases"`
+	Histories []History `json:"histories"`
 }
 
 // This is just for swagger

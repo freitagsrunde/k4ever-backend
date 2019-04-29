@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 		addPermissionToUser(users, config)
 		PurchaseRoutes(users, config)
 		addBalance(users, config)
+		transferToUser(users, config)
 	}
 }
 
@@ -263,25 +265,99 @@ func addBalance(router *gin.RouterGroup, config k4ever.Config) {
 		Balance Balance
 	}
 	router.PUT(":name/balance/", func(c *gin.Context) {
-		var user models.User
 		var err error
 		var balance Balance
 		if err := c.ShouldBindJSON(&balance); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		tx := config.DB().Begin()
-		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
+
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+
+		if username == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
 			return
 		}
-		user.Balance = user.Balance + balance.Amount
-		if err = tx.Save(&user).Error; err != nil {
-			tx.Rollback()
+
+		if username != c.Param("name") {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "You can only update you own account"})
+			return
+		}
+
+		// Add balance to specified account
+		var balanceHistory models.History
+		balanceHistory, err = k4ever.AddBalance(c.Param("name"), balance.Amount, config)
+		if err != nil {
+			if err.Error() == "record not found" {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+				return
+			}
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		tx.Commit()
-		c.JSON(http.StatusOK, user)
+		c.JSON(http.StatusOK, balanceHistory)
+	})
+}
+
+// swagger:route PUT /users/{name}/transfer/ user balance transferToUser
+//
+// Transfer money from the current user to the user in the path
+//
+// Transfers the exact given amount from the body from the current user to the user in the path. The transfer fails if the amount is 0 or lower.
+//
+//		Consumes:
+//		- application/json
+//
+//		Produces:
+//		- application/json
+//
+//		Security:
+//        jwt:
+//
+//		Responses:
+//		  default: GenericError
+//		  200: History
+//		  400: GenericError
+//        404: GenericError
+//        500: GenericError
+func transferToUser(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters transferToUser
+	type TransferToUserParams struct {
+		// in: path
+		// required: true
+		Name string `json:"name"`
+
+		// in: body
+		// required: true
+		balance Balance
+	}
+	router.PUT(":name/transfer/", func(c *gin.Context) {
+		// Get current user
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+		if username == nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		// Parse amount from body
+		var balance Balance
+		if err := c.ShouldBindJSON(&balance); err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Update balances
+		transfer, err := k4ever.TransferToUser(username.(string), c.Param("name"), balance.Amount, config)
+		if err != nil {
+			if err.Error() == "record not found" {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, transfer)
 	})
 }

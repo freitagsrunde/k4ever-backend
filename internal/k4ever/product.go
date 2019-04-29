@@ -11,7 +11,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	sumProductsTotal := config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr()
 
 	// Subquery to get the sum of purchases by the logged in user for each product
-	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
+	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
 
 	// Query to get all product information
 	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", sumProductsTotal, sumProductsUser).Group("id").Order(params.SortBy + " " + params.Order)
@@ -52,7 +52,7 @@ func GetProduct(productID string, username string, config Config) (product model
 	}
 	product.TimesBoughtTotal = count
 
-	if err := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Count(&count).Error; err != nil {
+	if err := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Count(&count).Error; err != nil {
 		return models.Product{}, err
 	}
 	product.TimesBought = count
@@ -67,20 +67,20 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 	return nil
 }
 
-func BuyProduct(productID string, username string, config Config) (purchase models.Purchase, err error) {
+func BuyProduct(productID string, username string, config Config) (purchase models.History, err error) {
 	var product models.Product
 
 	tx := config.DB().Begin()
 	// Get Product
 	if err := tx.Where("id = ?", productID).First(&product).Error; err != nil {
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 
 	if product.Disabled == true {
-		return models.Purchase{}, errors.New("The product is disabled and cannot be bought")
+		return models.History{}, errors.New("The product is disabled and cannot be bought")
 	}
 
-	purchase = models.Purchase{Total: product.Price}
+	purchase = models.History{Total: product.Price, Type: models.PurchaseHistory}
 	item := models.PurchaseItem{Amount: 1}
 	item.ProductID = product.ID
 	item.Name = product.Name
@@ -93,25 +93,25 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 	// Create PurchaseItem
 	if err := tx.Create(&item).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	purchase.Items = append(purchase.Items, item)
 	// Create Purchase
 	if err := tx.Create(&purchase).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	// Update Balance
 	var user models.User
 	if err := tx.Where("user_name = ?", username).First(&user).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	user.Balance = user.Balance - product.Price
-	user.Purchases = append(user.Purchases, purchase)
+	user.Histories = append(user.Histories, purchase)
 	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()
-		return models.Purchase{}, err
+		return models.History{}, err
 	}
 	tx.Commit()
 	return purchase, nil
