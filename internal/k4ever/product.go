@@ -7,14 +7,14 @@ import (
 )
 
 func GetProducts(username string, params models.DefaultParams, config Config) (products []models.Product, err error) {
-	// Subquery to get the sum of purchases for each product
+	// Subquery to get the sum of histories for each product
 	sumProductsTotal := config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr()
 
-	// Subquery to get the sum of purchases by the logged in user for each product
+	// Subquery to get the sum of histories by the logged in user for each product
 	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
 
 	// Subquery to get the time when the current user last bought the item
-	lastBoughtByUser := config.DB().Table("purchase_items").Select("purchase_items.updated_at").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Order("purchase_items.updated_at desc").Limit(1).QueryExpr()
+	lastBoughtByUser := config.DB().Table("purchase_items").Select("purchase_items.updated_at").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Order("purchase_items.updated_at desc").Limit(1).QueryExpr()
 
 	// Query to get all product information
 	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought, (?) as last_bought", sumProductsTotal, sumProductsUser, lastBoughtByUser).Group("id").Order(params.SortBy + " " + params.Order)
@@ -61,7 +61,7 @@ func GetProduct(productID string, username string, config Config) (product model
 	product.TimesBought = count
 
 	// Subquery to get the time when the current user last bought the item
-	if err := config.DB().Table("purchase_items").Select("purchase_items.updated_at as last_bought").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = ?", username, productID).Order("purchase_items.updated_at desc").Limit(1).Scan(&product).Error; err != nil {
+	if err := config.DB().Table("purchase_items").Select("purchase_items.updated_at as last_bought").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = ?", username, productID).Order("purchase_items.updated_at desc").Limit(1).Scan(&product).Error; err != nil {
 		return models.Product{}, err
 	}
 
