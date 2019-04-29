@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // A generic product
 //
 // A generic product with some values
@@ -57,6 +59,8 @@ type ProductInformation struct {
 	TimesBoughtTotal int `json:"times_bought_total" gorm:"-"`
 
 	TimesBought int `json:"times_bought" gorm:"-"`
+
+	LastBought time.Time `json:"last_bought" gorm:"-"`
 	// A flag to show if the product is currently buyable
 	//
 	// required: false

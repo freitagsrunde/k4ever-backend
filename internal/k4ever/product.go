@@ -13,8 +13,11 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	// Subquery to get the sum of purchases by the logged in user for each product
 	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
 
+	// Subquery to get the time when the current user last bought the item
+	lastBoughtByUser := config.DB().Table("purchase_items").Select("purchase_items.updated_at").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Order("purchase_items.updated_at desc").Limit(1).QueryExpr()
+
 	// Query to get all product information
-	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought", sumProductsTotal, sumProductsUser).Group("id").Order(params.SortBy + " " + params.Order)
+	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought, (?) as last_bought", sumProductsTotal, sumProductsUser, lastBoughtByUser).Group("id").Order(params.SortBy + " " + params.Order)
 	if params.Offset != 0 {
 		tx = tx.Offset(params.Offset)
 	}
@@ -28,7 +31,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	}
 	for rows.Next() {
 		var p models.Product
-		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.Disabled, &p.TimesBoughtTotal, &p.TimesBought); errSql != nil {
+		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.Disabled, &p.TimesBoughtTotal, &p.TimesBought, &p.LastBought); errSql != nil {
 			return []models.Product{}, errSql
 		}
 		products = append(products, p)
@@ -56,6 +59,11 @@ func GetProduct(productID string, username string, config Config) (product model
 		return models.Product{}, err
 	}
 	product.TimesBought = count
+
+	// Subquery to get the time when the current user last bought the item
+	if err := config.DB().Table("purchase_items").Select("purchase_items.updated_at as last_bought").Joins("join purchases on purchases.id = purchase_items.purchase_id").Joins("join users on users.id = purchases.user_id").Where("users.user_name = ? AND purchase_items.product_id = ?", username, productID).Order("purchase_items.updated_at desc").Limit(1).Scan(&product).Error; err != nil {
+		return models.Product{}, err
+	}
 
 	return product, nil
 }
