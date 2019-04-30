@@ -16,3 +16,6 @@
 *.db
 # Go Binary
 k4ever-backend
+
+# Default directory to store files/images
+files/

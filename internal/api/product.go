@@ -1,12 +1,14 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
+	"github.com/freitagsrunde/k4ever-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +16,7 @@ func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
 		getProduct(products, config)
-		getProductImage(products, config)
+		setProductImage(products, config)
 	}
 }
 
@@ -172,15 +174,49 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 //		Responses:
 //		  default: GenericError
 //		  502: GenericError
-func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
+func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters getProductImage
 	type getProductImageParams struct {
 		// in: path
 		// required: true
 		Id int `json:"id"`
 	}
-	router.GET(":id/image/", func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{"Hello": "World"})
+	router.PUT(":id/image/", func(c *gin.Context) {
+		var product models.Product
+		if err := config.DB().First(&product).Where("id = ?", c.Param("id")).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no such product"})
+			return
+		}
+
+		fileHeader, err := c.FormFile("file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "could not get file from key file"})
+			return
+		}
+
+		f, err := fileHeader.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not open file"})
+			return
+		}
+
+		bytes := utils.StreamToByte(f)
+
+		path, err := utils.UploadFile(bytes, "products/"+product.Name, fileHeader.Filename)
+		if err != nil {
+			fmt.Println(err.Error())
+			if err.Error() == "file already exists" {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "file already exists"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error while saving file"})
+			return
+		}
+		fmt.Println(path)
+
+		product.Image = config.HttpServerHost() + ":" + strconv.Itoa(config.HttpServerPort()) + path
+		k4ever.UpdateProduct(&product, config)
+		c.JSON(http.StatusOK, product)
 	})
 }
 

@@ -25,6 +25,7 @@ type Config struct {
 	ldapPassword   string
 	ldapBaseDN     string
 	ldapFilterDN   string
+	httpServerHost string
 	httpServerPort int
 	gitCommit      string
 	gitBranch      string
@@ -45,6 +46,12 @@ func NewConfig() *Config {
 	c.gitCommit = GitCommit
 	c.gitBranch = GitBranch
 	c.buildTime = BuildTime
+	c.ldapHost = k4ever.GetEnv("K4EVER_LDAPHOST", "localhost")
+	c.ldapBind = k4ever.GetEnv("K4EVER_LDAPBIND", "admin")
+	c.ldapPassword = k4ever.GetEnv("K4EVER_LDAPPASSWORD", "admin")
+	c.ldapBaseDN = k4ever.GetEnv("K4EVER_LDAPBASEDN", "CN=Users,DC=example,DC=com")
+	c.ldapFilterDN = k4ever.GetEnv("K4EVER_LDAPFILTERDN", "(&(objectClass=person)(uid={username}))")
+	c.httpServerHost = k4ever.GetEnv("K4EVER_DOMAIN", "localhost")
 
 	return c
 }
@@ -95,6 +102,10 @@ func (c *Config) LdapFilterDN() string {
 	return c.ldapFilterDN
 }
 
+func (c *Config) HttpServerHost() string {
+	return c.httpServerHost
+}
+
 func (c *Config) SetHttpServerPort(port int) {
 	c.httpServerPort = port
 }
@@ -114,11 +125,6 @@ func (c *Config) connectToDatabase() error {
 	dbname := k4ever.GetEnv("K4EVER_DBNAME", "postgres")
 	password := k4ever.GetEnv("K4EVER_DBPASS", "postgres")
 	sslmode := k4ever.GetEnv("K4EVER_DBSSL", "disable")
-	c.ldapHost = k4ever.GetEnv("K4EVER_LDAPHOST", "localhost")
-	c.ldapBind = k4ever.GetEnv("K4EVER_LDAPBIND", "admin")
-	c.ldapPassword = k4ever.GetEnv("K4EVER_LDAPPASSWORD", "admin")
-	c.ldapBaseDN = k4ever.GetEnv("K4EVER_LDAPBASEDN", "CN=Users,DC=example,DC=com")
-	c.ldapFilterDN = k4ever.GetEnv("K4EVER_LDAPFILTERDN", "(&(objectClass=person)(uid={username}))")
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=%s", host, port, user, dbname, password, sslmode))
 	c.db = db
 

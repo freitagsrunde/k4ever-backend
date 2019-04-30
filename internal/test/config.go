@@ -62,6 +62,10 @@ func (c *Config) LdapFilterDN() string {
 	return "(&(objectClass=person)(uid={username}))"
 }
 
+func (c *Config) HttpServerHost() string {
+	return "localhost"
+}
+
 func (c *Config) SetHttpServerPort(port int) {
 	return
 }

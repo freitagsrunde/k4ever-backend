@@ -16,6 +16,7 @@ type Config interface {
 	LdapPassword() string
 	LdapBaseDN() string
 	LdapFilterDN() string
+	HttpServerHost() string
 	DB() *gorm.DB
 	SetHttpServerPort(port int)
 	HttpServerPort() int
