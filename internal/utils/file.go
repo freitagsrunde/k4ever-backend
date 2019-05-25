@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 )
 
-func UploadFile(file []byte, topic string, filename string) (string, error) {
-	dir := string("./files/" + topic + "/")
+func UploadFile(file []byte, topic string, filename string, config k4ever.Config) (string, error) {
+	dir := string(config.FilesPath() + "/files/" + topic + "/")
 	path := string(dir + filename)
 	serverFile := string("/files/" + topic + "/" + filename)
 

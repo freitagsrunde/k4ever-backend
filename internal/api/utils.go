@@ -31,7 +31,7 @@ func setImage(c *gin.Context, object fmt.Stringer, config k4ever.Config) string 
 
 	bytes := utils.StreamToByte(f)
 
-	path, err := utils.UploadFile(bytes, fmt.Sprintf("%v/%s", object, object.String()), fileHeader.Filename)
+	path, err := utils.UploadFile(bytes, fmt.Sprintf("%v/%s", object, object.String()), fileHeader.Filename, config)
 	if err != nil {
 		if err.Error() == "file already exists" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "file already exists"})

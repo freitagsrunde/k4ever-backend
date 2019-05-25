@@ -35,6 +35,10 @@ func (c *Config) BuildTime() string {
 	return "now"
 }
 
+func (c *Config) FilesPath() string {
+	return "/temp/k4ever/"
+}
+
 func (c *Config) DB() *gorm.DB {
 	if c.db == nil {
 		c.connectToDatabase()

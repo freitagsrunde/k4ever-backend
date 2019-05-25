@@ -20,6 +20,7 @@ type Config struct {
 	dbName         string
 	dbPass         string
 	dbSSLMode      string
+	filesPath      string
 	ldapHost       string
 	ldapBind       string
 	ldapPassword   string
@@ -46,6 +47,7 @@ func NewConfig() *Config {
 	c.gitCommit = GitCommit
 	c.gitBranch = GitBranch
 	c.buildTime = BuildTime
+	c.filesPath = k4ever.GetEnv("K4EVER_FILESPATH", ".")
 	c.ldapHost = k4ever.GetEnv("K4EVER_LDAPHOST", "localhost")
 	c.ldapBind = k4ever.GetEnv("K4EVER_LDAPBIND", "admin")
 	c.ldapPassword = k4ever.GetEnv("K4EVER_LDAPPASSWORD", "admin")
@@ -66,6 +68,10 @@ func (c *Config) GitCommit() string {
 
 func (c *Config) GitBranch() string {
 	return c.gitBranch
+}
+
+func (c *Config) FilesPath() string {
+	return c.filesPath
 }
 
 func (c *Config) BuildTime() string {

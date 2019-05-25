@@ -11,6 +11,7 @@ type Config interface {
 	GitCommit() string
 	GitBranch() string
 	BuildTime() string
+	FilesPath() string
 	LdapHost() string
 	LdapBind() string
 	LdapPassword() string
