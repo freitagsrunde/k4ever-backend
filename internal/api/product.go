@@ -1,14 +1,12 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
-	"github.com/freitagsrunde/k4ever-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -78,6 +76,10 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 		}
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]
+		// Since at this point a user was already validated we can use a default user if non is found for testing
+		if username == nil {
+			username = ""
+		}
 
 		products, err := k4ever.GetProducts(username.(string), params, config)
 		if err != nil {
@@ -183,38 +185,19 @@ func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.PUT(":id/image/", func(c *gin.Context) {
 		var product models.Product
-		if err := config.DB().First(&product).Where("id = ?", c.Param("id")).Error; err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no such product"})
+		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		imagePath := setImage(c, product, config)
+
+		// Return if empty string is returned because have already send an error message
+		if imagePath == "" {
 			return
 		}
 
-		fileHeader, err := c.FormFile("file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "could not get file from key file"})
-			return
-		}
-
-		f, err := fileHeader.Open()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not open file"})
-			return
-		}
-
-		bytes := utils.StreamToByte(f)
-
-		path, err := utils.UploadFile(bytes, "products/"+product.Name, fileHeader.Filename)
-		if err != nil {
-			fmt.Println(err.Error())
-			if err.Error() == "file already exists" {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "file already exists"})
-				return
-			}
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "error while saving file"})
-			return
-		}
-		fmt.Println(path)
-
-		product.Image = config.HttpServerHost() + ":" + strconv.Itoa(config.HttpServerPort()) + path
+		// Set prouct image
+		product.Image = imagePath
 		k4ever.UpdateProduct(&product, config)
 		c.JSON(http.StatusOK, product)
 	})

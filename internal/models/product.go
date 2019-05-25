@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // A generic product
 //
@@ -65,4 +68,8 @@ type ProductInformation struct {
 	//
 	// required: false
 	Disabled bool `json:"disabled" gorm:"default:false"`
+}
+
+func (p Product) String() string {
+	return fmt.Sprintf("%s_%d", p.Name, p.ID)
 }

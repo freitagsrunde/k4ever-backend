@@ -1,4 +1,4 @@
-package server
+package utils
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 // Connect to ldap and return connection object
-func connect(config k4ever.Config) (*ldap.Conn, error) {
+func LdapConnect(config k4ever.Config) (*ldap.Conn, error) {
 	conn, err := ldap.DialURL(config.LdapHost())
 
 	if err != nil {
@@ -24,7 +24,7 @@ func connect(config k4ever.Config) (*ldap.Conn, error) {
 }
 
 // try to authenticate user against ldap
-func ldapAuth(user string, password string, conn *ldap.Conn, config k4ever.Config) error {
+func LdapAuth(user string, password string, conn *ldap.Conn, config k4ever.Config) error {
 	result, err := conn.Search(ldap.NewSearchRequest(
 		config.LdapBaseDN(),
 		ldap.ScopeWholeSubtree,
