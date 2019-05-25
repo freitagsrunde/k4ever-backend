@@ -39,8 +39,8 @@ func UploadFile(file []byte, topic string, filename string, config k4ever.Config
 	return serverFile, nil
 }
 
-func DeleteFile(topic, filename string) error {
-	path := string("./files/" + topic + "/" + filename)
+func DeleteFile(topic, filename string, config k4ever.Config) error {
+	path := string(config.FilesPath() + "/files/" + topic + "/" + filename)
 
 	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
 		return err

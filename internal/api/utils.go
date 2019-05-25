@@ -10,13 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Set image will just handle one image per object for now but could be easily extended to support multiple files per object
 func setImage(c *gin.Context, object fmt.Stringer, config k4ever.Config) string {
-	//var product models.Product
-	//if err := config.DB().First(&product).Where("id = ?", c.Param("id")).Error; err != nil {
-	//	c.JSON(http.StatusNotFound, gin.H{"error": "no such product"})
-	//	return
-	//}
-
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "could not get file from key file"})
@@ -31,7 +26,10 @@ func setImage(c *gin.Context, object fmt.Stringer, config k4ever.Config) string 
 
 	bytes := utils.StreamToByte(f)
 
-	path, err := utils.UploadFile(bytes, fmt.Sprintf("%v/%s", object, object.String()), fileHeader.Filename, config)
+	// Delete the old file if the is one
+	utils.DeleteFile(fmt.Sprintf("%v/%s", object, object.String()), object.String(), config)
+
+	path, err := utils.UploadFile(bytes, fmt.Sprintf("%v/%s", object, object.String()), object.String, config)
 	if err != nil {
 		if err.Error() == "file already exists" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "file already exists"})
@@ -42,8 +40,4 @@ func setImage(c *gin.Context, object fmt.Stringer, config k4ever.Config) string 
 	}
 
 	return config.HttpServerHost() + ":" + strconv.Itoa(config.HttpServerPort()) + path
-
-	//k4ever.UpdateProduct(&product, config)
-	//	c.JSON(http.StatusOK, product)
-
 }
