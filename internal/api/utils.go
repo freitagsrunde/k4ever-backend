@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"path"
 	"strconv"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -27,15 +28,15 @@ func setImage(c *gin.Context, object fmt.Stringer, config k4ever.Config) string 
 	bytes := utils.StreamToByte(f)
 
 	// Delete the old file if the is one
-	utils.DeleteFile(fmt.Sprintf("%v/%s", object, object.String()), object.String(), config)
+	utils.DeleteFiles(fmt.Sprintf("%T/%s/%s", object, object.String(), object.String()), config)
 
-	path, err := utils.UploadFile(bytes, fmt.Sprintf("%v/%s", object, object.String()), object.String, config)
+	path, err := utils.UploadFile(bytes, fmt.Sprintf("%T/%s/%s%s", object, object.String(), object.String(), path.Ext(fileHeader.Filename)), config)
 	if err != nil {
 		if err.Error() == "file already exists" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "file already exists"})
 			return ""
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while saving file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error while saving file: " + err.Error()})
 		return ""
 	}
 

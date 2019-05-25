@@ -7,15 +7,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 )
 
-func UploadFile(file []byte, topic string, filename string, config k4ever.Config) (string, error) {
-	dir := string(config.FilesPath() + "/files/" + topic + "/")
-	path := string(dir + filename)
-	serverFile := string("/files/" + topic + "/" + filename)
+func UploadFile(file []byte, filepath string, config k4ever.Config) (string, error) {
+	fullPath := string(config.FilesPath() + "/files/" + filepath)
+	dir := path.Dir(fullPath)
+	serverFile := string("/files/" + filepath)
 
 	contentType := http.DetectContentType(file)
 
@@ -27,11 +29,11 @@ func UploadFile(file []byte, topic string, filename string, config k4ever.Config
 		os.MkdirAll(dir, os.ModePerm)
 	}
 
-	if _, err := os.Stat(path); err == nil {
+	if _, err := os.Stat(fullPath); err == nil {
 		return "", errors.New("file already exists")
 	}
 
-	err := ioutil.WriteFile(path, file, 0644)
+	err := ioutil.WriteFile(fullPath, file, 0644)
 	if err != nil {
 		return "", err
 	}
@@ -39,11 +41,18 @@ func UploadFile(file []byte, topic string, filename string, config k4ever.Config
 	return serverFile, nil
 }
 
-func DeleteFile(topic, filename string, config k4ever.Config) error {
-	path := string(config.FilesPath() + "/files/" + topic + "/" + filename)
+func DeleteFiles(filespath string, config k4ever.Config) error {
+	fullPath := string(config.FilesPath() + "/files/" + filespath)
 
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+	files, err := filepath.Glob(fullPath + "*")
+	if err != nil {
 		return err
+	}
+
+	for _, f := range files {
+		if err := os.Remove(f); err != nil && !os.IsNotExist(err) {
+			return err
+		}
 	}
 
 	return nil
