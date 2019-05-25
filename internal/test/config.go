@@ -35,6 +35,10 @@ func (c *Config) BuildTime() string {
 	return "now"
 }
 
+func (c *Config) FilesPath() string {
+	return "/temp/k4ever/"
+}
+
 func (c *Config) DB() *gorm.DB {
 	if c.db == nil {
 		c.connectToDatabase()
@@ -60,6 +64,10 @@ func (c *Config) LdapBaseDN() string {
 
 func (c *Config) LdapFilterDN() string {
 	return "(&(objectClass=person)(uid={username}))"
+}
+
+func (c *Config) HttpServerHost() string {
+	return "localhost"
 }
 
 func (c *Config) SetHttpServerPort(port int) {

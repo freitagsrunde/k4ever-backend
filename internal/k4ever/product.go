@@ -75,6 +75,13 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 	return nil
 }
 
+func UpdateProduct(product *models.Product, config Config) (err error) {
+	if err := config.DB().Update(product).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func BuyProduct(productID string, username string, config Config) (purchase models.History, err error) {
 	var product models.Product
 

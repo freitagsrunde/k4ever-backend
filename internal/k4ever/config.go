@@ -11,11 +11,13 @@ type Config interface {
 	GitCommit() string
 	GitBranch() string
 	BuildTime() string
+	FilesPath() string
 	LdapHost() string
 	LdapBind() string
 	LdapPassword() string
 	LdapBaseDN() string
 	LdapFilterDN() string
+	HttpServerHost() string
 	DB() *gorm.DB
 	SetHttpServerPort(port int)
 	HttpServerPort() int

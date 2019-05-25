@@ -12,16 +12,17 @@ func registerRoutes(app *gin.Engine, config k4ever.Config) {
 	v1 := app.Group("/api/v1/")
 	{
 		api.ProductRoutesPublic(v1, config)
-		v1.POST("/login/", authMiddleware.LoginHandler)
+		v1.POST("/login/", api.AuthMiddleware.LoginHandler)
 		api.VersionRoutesPublic(v1, config)
 		api.SwaggerRoutesPublic(v1, config)
 	}
 	v1Private := app.Group("/api/v1/")
 	{
-		v1Private.Use(authMiddleware.MiddlewareFunc())
+		v1Private.Use(api.AuthMiddleware.MiddlewareFunc())
 
 		api.PermissionRoutesPrivate(v1Private, config)
 		api.ProductRoutesPrivate(v1Private, config)
 		api.UserRoutesPrivate(v1Private, config)
+		v1Private.Static("files", "./files")
 	}
 }

@@ -1,6 +1,12 @@
 package api
 
-/*
+import (
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
 func TestGetProducts(t *testing.T) {
 	app, router, conf := NewApiTest()
 
@@ -10,4 +16,3 @@ func TestGetProducts(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, result.Code)
 }
-*/

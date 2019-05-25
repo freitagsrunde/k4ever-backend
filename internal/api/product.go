@@ -14,7 +14,7 @@ func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
 		getProduct(products, config)
-		getProductImage(products, config)
+		setProductImage(products, config)
 	}
 }
 
@@ -76,6 +76,10 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 		}
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]
+		// Since at this point a user was already validated we can use a default user if non is found for testing
+		if username == nil {
+			username = ""
+		}
 
 		products, err := k4ever.GetProducts(username.(string), params, config)
 		if err != nil {
@@ -172,15 +176,30 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 //		Responses:
 //		  default: GenericError
 //		  502: GenericError
-func getProductImage(router *gin.RouterGroup, config k4ever.Config) {
+func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters getProductImage
 	type getProductImageParams struct {
 		// in: path
 		// required: true
 		Id int `json:"id"`
 	}
-	router.GET(":id/image/", func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{"Hello": "World"})
+	router.PUT(":id/image/", func(c *gin.Context) {
+		var product models.Product
+		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		imagePath := setImage(c, product, config)
+
+		// Return if empty string is returned because have already send an error message
+		if imagePath == "" {
+			return
+		}
+
+		// Set prouct image
+		product.Image = imagePath
+		k4ever.UpdateProduct(&product, config)
+		c.JSON(http.StatusOK, product)
 	})
 }
 
