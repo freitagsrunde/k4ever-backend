@@ -3,7 +3,7 @@
 // defines all k4ever backend endpoints
 //
 //		Schemes: http, https
-//		Host: localhost
+//		Host: k4ever.freitagsrunde.dev
 //		BasePath: /api/v1
 //		Version: 0.0.1
 //		License: MIT (tbd)
@@ -28,7 +28,7 @@ import (
 	"github.com/freitagsrunde/k4ever-backend/cmd"
 )
 
-//go:generate swagger generate spec -o ./swagger.yml
+//go:generate swagger generate spec -m -o ./swagger.yml
 func main() {
 	cmd.Execute()
 }

@@ -19,6 +19,7 @@ func Start(config k4ever.Config) {
 	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	app.Use(cors.New(corsConfig))
+	app.HandleMethodNotAllowed = true
 
 	api.CreateAuthMiddleware(config)
 
