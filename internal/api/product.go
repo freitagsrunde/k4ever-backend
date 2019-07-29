@@ -86,7 +86,7 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 
 		products, err := k4ever.GetProducts(username.(string), params, config)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, GenericError{Body: struct{ Message string }{Message: err.Error()}})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, GenericError{Body: struct{ Message string }{Message: err.Error()}})
 			return
 		}
 		c.JSON(http.StatusOK, products)

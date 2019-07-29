@@ -74,7 +74,7 @@ func TestGetProducts(t *testing.T) {
 	assert.Equal(t, 1, products[0].TimesBoughtTotal)
 	assert.Equal(t, 1, products[0].TimesBought)
 	// Check if times are equal
-	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(products[0].LastBought)
+	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(*(products[0].LastBought))
 	assert.Equal(t, true, timesAreEqual)
 }
 
@@ -111,6 +111,6 @@ func TestGetProduct(t *testing.T) {
 	assert.Equal(t, 1, product.TimesBoughtTotal)
 	assert.Equal(t, 1, product.TimesBought)
 	// Check if times are equal
-	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(product.LastBought)
+	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(*(product.LastBought))
 	assert.Equal(t, true, timesAreEqual)
 }
