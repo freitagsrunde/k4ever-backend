@@ -10,11 +10,11 @@ import (
 func VersionRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	versionGroup := router.Group("/version/")
 	{
-		GetVersion(versionGroup, config)
+		getVersion(versionGroup, config)
 	}
 }
 
-// swagger:model
+// swagger:model VersionInformation
 type VersionInformation struct {
 	Version   string `json:"version"`
 	GitBranch string `json:"branch"`
@@ -22,7 +22,7 @@ type VersionInformation struct {
 	BuildTime string `json:"build_time"`
 }
 
-// swagger:route GET /version/ getVersion
+// swagger:route GET /version/ version getVersion
 //
 // Fetch version information
 //
@@ -32,7 +32,7 @@ type VersionInformation struct {
 //		Responses:
 //		  default: VersionInformation
 //		  200: VersionInformation
-func GetVersion(router *gin.RouterGroup, config k4ever.Config) {
+func getVersion(router *gin.RouterGroup, config k4ever.Config) {
 	version := VersionInformation{Version: config.Version(), GitBranch: config.GitBranch(), GitCommit: config.GitCommit(), BuildTime: config.BuildTime()}
 
 	router.GET("/", func(c *gin.Context) {

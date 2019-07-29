@@ -39,6 +39,9 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 //		Produces:
 //		- application/json
 //
+//		Security:
+//		  jwt:
+//
 //		Responses:
 //		  default: GenericError
 //		  200: productsResponse
@@ -101,6 +104,9 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Produces:
 //		- application/json
+//
+//		Security:
+//		  jwt:
 //
 //		Responses:
 //		  default: GenericError
@@ -173,6 +179,9 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 // 		Produces:
 //		- application/json
 //
+//		Security:
+//		  jwt:
+//
 //		Responses:
 //		  default: GenericError
 //		  502: GenericError
@@ -217,7 +226,7 @@ func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Responses:
 //		  default: GenericError
-//		  200: Purchase
+//		  200: History
 //		  400: GenericError
 //		  404: GenericError
 //        500: GenericError

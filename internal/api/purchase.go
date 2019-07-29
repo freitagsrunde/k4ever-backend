@@ -27,7 +27,7 @@ func PurchaseRoutes(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Responses:
 //		  default: GenericError
-//		  200: PurchaseArray
+//		  200: HistoryArray
 //		  400: GenericError
 func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters getPurchaseHistory
