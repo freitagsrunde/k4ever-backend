@@ -109,7 +109,7 @@ func authenticate(c *gin.Context) (interface{}, error) {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginVars.Password)); err != nil {
 		log.Debug("Login failed: password was wrong")
 		time.Sleep(200 * time.Millisecond)
-		return nil, err
+		return nil, jwt.ErrFailedAuthentication
 	}
 
 	return &user, nil
