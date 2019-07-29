@@ -63,7 +63,7 @@ type ProductInformation struct {
 
 	TimesBought int `json:"times_bought" gorm:"-"`
 
-	LastBought time.Time `json:"last_bought" gorm:"-"`
+	LastBought *time.Time `json:"last_bought" gorm:"-"`
 	// A flag to show if the product is currently buyable
 	//
 	// required: false
