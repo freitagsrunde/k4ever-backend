@@ -1,9 +1,10 @@
 package k4ever
 
 import (
+	"context"
 	"os"
 
-	"github.com/jinzhu/gorm"
+	"github.com/dgraph-io/dgo"
 )
 
 type Config interface {
@@ -18,10 +19,11 @@ type Config interface {
 	LdapBaseDN() string
 	LdapFilterDN() string
 	HttpServerHost() string
-	DB() *gorm.DB
+	DB() *dgo.Dgraph
 	SetHttpServerPort(port int)
 	HttpServerPort() int
-	MigrateDB()
+	MigrateDB() error
+	Context() context.Context
 }
 
 func GetEnv(key, fallback string) string {

@@ -2,7 +2,6 @@ package api
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
@@ -46,10 +45,12 @@ func getPermissions(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET("", func(c *gin.Context) {
 		var permissions []models.Permission
-		if err := config.DB().Find(&permissions).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
+		/*
+			if err := config.DB().Find(&permissions).Error; err != nil {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+		*/
 		c.JSON(http.StatusOK, permissions)
 	})
 }
@@ -77,10 +78,12 @@ func getPermission(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET(":id", func(c *gin.Context) {
 		var permission models.Permission
-		if err := config.DB().Find(&permission).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
+		/*
+			if err := config.DB().Find(&permission).Error; err != nil {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+		*/
 		c.JSON(http.StatusOK, permission)
 	})
 }
@@ -117,14 +120,16 @@ func createPermission(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := config.DB().Create(&permission).Error; err != nil {
-			if strings.HasPrefix(err.Error(), "UNIQUE constraint failed:") {
-				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Permission already exists"})
+		/*
+			if err := config.DB().Create(&permission).Error; err != nil {
+				if strings.HasPrefix(err.Error(), "UNIQUE constraint failed:") {
+					c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Permission already exists"})
+					return
+				}
+				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 				return
 			}
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
+		*/
 		c.JSON(http.StatusCreated, permission)
 	})
 }

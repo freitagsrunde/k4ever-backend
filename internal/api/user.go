@@ -215,12 +215,14 @@ func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
-		if err = config.DB().Where("name = ?", permission.Name).First(&permission).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-		user.Permissions = append(user.Permissions, permission)
-		config.DB().Save(&user)
+		/*
+			if err = config.DB().Where("name = ?", permission.Name).First(&permission).Error; err != nil {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			user.Permissions = append(user.Permissions, permission)
+			config.DB().Save(&user)
+		*/
 
 		c.JSON(http.StatusAccepted, user)
 	})

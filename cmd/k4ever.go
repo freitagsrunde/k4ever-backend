@@ -27,7 +27,11 @@ func init() {
 
 	config = context.NewConfig()
 
-	config.MigrateDB()
+	err := config.MigrateDB()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 func initConfig() {

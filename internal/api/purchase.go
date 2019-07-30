@@ -37,17 +37,20 @@ func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
 		Name string `json:"name"`
 	}
 	router.GET("", func(c *gin.Context) {
-		var user models.User
+		/*var user models.User
 		var err error
 		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
+		*/
 		var histories []models.History
-		if err = config.DB().Preload("Items").Model(&user).Related(&histories).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
-			return
-		}
+		/*
+			if err = config.DB().Preload("Items").Model(&user).Related(&histories).Error; err != nil {
+				c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
+				return
+			}
+		*/
 		c.JSON(http.StatusOK, histories)
 	})
 }

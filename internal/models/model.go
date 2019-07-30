@@ -8,7 +8,7 @@ import (
 
 // gorm.Model definition
 type Model struct {
-	ID        uint       `json:"id" gorm:"primary_key"`
+	Uid       string     `json:"uid"`
 	CreatedAt time.Time  `json:"-"`
 	UpdatedAt time.Time  `json:"-"`
 	DeletedAt *time.Time `json:"-"`
@@ -16,10 +16,10 @@ type Model struct {
 
 // gorm.Model
 type ModelTimes struct {
-	ID        uint       `json:"id" gorm:"primary_key"`
+	Uid       string     `json:"uid"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"-"`
+	DeletedAt *time.Time `json:"deleted_at"`
 }
 
 // swagger:parameters getProducts getUsers

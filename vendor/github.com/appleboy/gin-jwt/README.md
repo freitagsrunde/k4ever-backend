@@ -1,6 +1,12 @@
 # JWT Middleware for Gin Framework
 
-[![GitHub tag](https://img.shields.io/github/tag/appleboy/gin-jwt.svg)](https://github.com/appleboy/gin-jwt/releases) [![GoDoc](https://godoc.org/github.com/appleboy/gin-jwt?status.svg)](https://godoc.org/github.com/appleboy/gin-jwt)  [![Build Status](http://drone.wu-boy.com/api/badges/appleboy/gin-jwt/status.svg)](http://drone.wu-boy.com/appleboy/gin-jwt) [![Go Report Card](https://goreportcard.com/badge/github.com/appleboy/gin-jwt)](https://goreportcard.com/report/github.com/appleboy/gin-jwt) [![codecov](https://codecov.io/gh/appleboy/gin-jwt/branch/master/graph/badge.svg)](https://codecov.io/gh/appleboy/gin-jwt) [![codebeat badge](https://codebeat.co/badges/c4015f07-df23-4c7c-95ba-9193a12e14b1)](https://codebeat.co/projects/github-com-appleboy-gin-jwt) [![Sourcegraph](https://sourcegraph.com/github.com/appleboy/gin-jwt/-/badge.svg)](https://sourcegraph.com/github.com/appleboy/gin-jwt?badge)
+[![GitHub tag](https://img.shields.io/github/tag/appleboy/gin-jwt.svg)](https://github.com/appleboy/gin-jwt/releases)
+[![GoDoc](https://godoc.org/github.com/appleboy/gin-jwt?status.svg)](https://godoc.org/github.com/appleboy/gin-jwt)
+[![Build Status](https://cloud.drone.io/api/badges/appleboy/gin-jwt/status.svg)](https://cloud.drone.io/appleboy/gin-jwt)
+[![Go Report Card](https://goreportcard.com/badge/github.com/appleboy/gin-jwt)](https://goreportcard.com/report/github.com/appleboy/gin-jwt)
+[![codecov](https://codecov.io/gh/appleboy/gin-jwt/branch/master/graph/badge.svg)](https://codecov.io/gh/appleboy/gin-jwt)
+[![codebeat badge](https://codebeat.co/badges/c4015f07-df23-4c7c-95ba-9193a12e14b1)](https://codebeat.co/projects/github-com-appleboy-gin-jwt)
+[![Sourcegraph](https://sourcegraph.com/github.com/appleboy/gin-jwt/-/badge.svg)](https://sourcegraph.com/github.com/appleboy/gin-jwt?badge)
 
 This is a middleware for [Gin](https://github.com/gin-gonic/gin) framework.
 
@@ -11,20 +17,20 @@ It uses [jwt-go](https://github.com/dgrijalva/jwt-go) to provide a jwt authentic
 Download and install it:
 
 ```sh
-$ go get github.com/appleboy/gin-jwt
+$ go get github.com/appleboy/gin-jwt/v2
 ```
 
 Import it in your code:
 
 ```go
-import "github.com/appleboy/gin-jwt"
+import "github.com/appleboy/gin-jwt/v2"
 ```
 
 ## Example
 
-Please see [the example file](example/server.go) and you can use `ExtractClaims` to fetch user data.
+Please see [the example file](example/basic/server.go) and you can use `ExtractClaims` to fetch user data.
 
-[embedmd]:# (example/server.go go)
+[embedmd]:# (example/basic/server.go go)
 ```go
 package main
 
@@ -34,7 +40,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/appleboy/gin-jwt"
+	"github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,11 +49,15 @@ type login struct {
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
+var identityKey = "id"
+
 func helloHandler(c *gin.Context) {
 	claims := jwt.ExtractClaims(c)
+	user, _ := c.Get(identityKey)
 	c.JSON(200, gin.H{
-		"userID": claims["id"],
-		"text":   "Hello World.",
+		"userID":   claims["id"],
+		"userName": user.(*User).UserName,
+		"text":     "Hello World.",
 	})
 }
 
@@ -69,22 +79,29 @@ func main() {
 	}
 
 	// the jwt middleware
-	authMiddleware := &jwt.GinJWTMiddleware{
-		Realm:      "test zone",
-		Key:        []byte("secret key"),
-		Timeout:    time.Hour,
-		MaxRefresh: time.Hour,
+	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
+		Realm:       "test zone",
+		Key:         []byte("secret key"),
+		Timeout:     time.Hour,
+		MaxRefresh:  time.Hour,
+		IdentityKey: identityKey,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
 			if v, ok := data.(*User); ok {
 				return jwt.MapClaims{
-					"id": v.UserName,
+					identityKey: v.UserName,
 				}
 			}
 			return jwt.MapClaims{}
 		},
+		IdentityHandler: func(c *gin.Context) interface{} {
+			claims := jwt.ExtractClaims(c)
+			return &User{
+				UserName: claims["id"].(string),
+			}
+		},
 		Authenticator: func(c *gin.Context) (interface{}, error) {
 			var loginVals login
-			if err := c.Bind(&loginVals); err != nil {
+			if err := c.ShouldBind(&loginVals); err != nil {
 				return "", jwt.ErrMissingLoginValues
 			}
 			userID := loginVals.Username
@@ -101,7 +118,7 @@ func main() {
 			return nil, jwt.ErrFailedAuthentication
 		},
 		Authorizator: func(data interface{}, c *gin.Context) bool {
-			if v, ok := data.(string); ok && v == "admin" {
+			if v, ok := data.(*User); ok && v.UserName == "admin" {
 				return true
 			}
 
@@ -120,6 +137,7 @@ func main() {
 		// - "header:<name>"
 		// - "query:<name>"
 		// - "cookie:<name>"
+		// - "param:<name>"
 		TokenLookup: "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
@@ -129,6 +147,10 @@ func main() {
 
 		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
 		TimeFunc: time.Now,
+	})
+
+	if err != nil {
+		log.Fatal("JWT Error:" + err.Error())
 	}
 
 	r.POST("/login", authMiddleware.LoginHandler)
@@ -140,10 +162,11 @@ func main() {
 	})
 
 	auth := r.Group("/auth")
+	// Refresh time can be longer than token timeout
+	auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 	auth.Use(authMiddleware.MiddlewareFunc())
 	{
 		auth.GET("/hello", helloHandler)
-		auth.GET("/refresh_token", authMiddleware.RefreshHandler)
 	}
 
 	if err := http.ListenAndServe(":"+port, r); err != nil {
@@ -226,3 +249,26 @@ Www-Authenticate: JWT realm=test zone
   "message": "You don't have permission to access."
 }
 ```
+
+### Cookie Token
+Use these options for setting the JWT in a cookie. See the Mozilla [documentation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#Secure_and_HttpOnly_cookies) for more information on these options. 
+
+```go
+	SendCookie:       true,
+	SecureCookie:     false, //non HTTPS dev environments
+	CookieHTTPOnly:   true,  // JS can't modify
+	CookieDomain:     "localhost:8080",
+	CookieName:       "token", // default jwt
+	TokenLookup:      "cookie:token",
+```
+
+### Login Flow 
+1. Authenticator: handles the login logic. On success LoginResponse is called, on failure Unauthorized is called. 
+2. LoginResponse: optional, allows setting a custom response such as a redirect.
+
+
+### JWT Flow 
+1. PayloadFunc: maps the claims in the JWT. 
+2. IdentityHandler: extracts identity from claims. 
+3. Authorizator: receives identity and handles authorization logic.
+4. Unauthorized: handles unauthorized logic.

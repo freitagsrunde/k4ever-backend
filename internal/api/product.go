@@ -120,9 +120,9 @@ func getProduct(router *gin.RouterGroup, config k4ever.Config) {
 		Id int `json:"id"`
 	}
 	router.GET(":id/", func(c *gin.Context) {
-		var product models.Product
-		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		product, err := k4ever.GetProduct(c.Param("id"), "_", config)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, product)
@@ -162,10 +162,12 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := config.DB().Create(&product).Error; err != nil {
+		err := k4ever.CreateProduct(&product, config)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
 		c.JSON(http.StatusCreated, product)
 	})
 }
@@ -194,20 +196,22 @@ func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.PUT(":id/image/", func(c *gin.Context) {
 		var product models.Product
-		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		}
-		imagePath := setImage(c, product, config)
+		/*
+			if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+			imagePath := setImage(c, product, config)
 
-		// Return if empty string is returned because have already send an error message
-		if imagePath == "" {
-			return
-		}
+			// Return if empty string is returned because have already send an error message
+			if imagePath == "" {
+				return
+			}
 
-		// Set prouct image
-		product.Image = imagePath
-		k4ever.UpdateProduct(&product, config)
+			// Set prouct image
+			product.Image = imagePath
+			k4ever.UpdateProduct(&product, config)
+		*/
 		c.JSON(http.StatusOK, product)
 	})
 }

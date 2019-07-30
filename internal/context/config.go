@@ -1,20 +1,23 @@
 package context
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
 
+	"github.com/dgraph-io/dgo"
+	"github.com/dgraph-io/dgo/protos/api"
+	"google.golang.org/grpc"
+
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
-	"github.com/freitagsrunde/k4ever-backend/internal/models"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/spf13/viper"
 )
 
 type Config struct {
 	version        string
-	db             *gorm.DB
+	context        context.Context
+	db             *dgo.Dgraph
 	dbHost         string
 	dbPort         int
 	dbName         string
@@ -40,6 +43,7 @@ var version string
 
 func NewConfig() *Config {
 	c := &Config{}
+	c.context = context.Background()
 	// c.AppVersion = viper.GetString("version")
 	fmt.Println(version)
 	c.version = version
@@ -78,7 +82,7 @@ func (c *Config) BuildTime() string {
 	return c.buildTime
 }
 
-func (c *Config) DB() *gorm.DB {
+func (c *Config) DB() *dgo.Dgraph {
 	if c.db == nil {
 		if err := c.connectToDatabase(); err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -120,31 +124,44 @@ func (c *Config) HttpServerPort() int {
 	return c.httpServerPort
 }
 
+func (c *Config) Context() context.Context {
+	return c.context
+}
+
 func (c *Config) connectToDatabase() error {
-	host := k4ever.GetEnv("K4EVER_DBHOST", "postgres")
-	portS := k4ever.GetEnv("K4EVER_DBPORT", "5432")
-	port, err := strconv.Atoi(portS)
+	host := k4ever.GetEnv("K4EVER_DBHOST", "localhost")
+	portS := k4ever.GetEnv("K4EVER_DBPORT", "9080")
+	_, err := strconv.Atoi(portS)
 	if err != nil {
 		return err
 	}
-	user := k4ever.GetEnv("K4EVER_DBUSER", "postgres")
+
+	d, err := grpc.Dial(host+":"+portS, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	c.db = dgo.NewDgraphClient(api.NewDgraphClient(d))
+	/*user := k4ever.GetEnv("K4EVER_DBUSER", "postgres")
 	dbname := k4ever.GetEnv("K4EVER_DBNAME", "postgres")
 	password := k4ever.GetEnv("K4EVER_DBPASS", "postgres")
 	sslmode := k4ever.GetEnv("K4EVER_DBSSL", "disable")
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s dbname=%s password=%s sslmode=%s", host, port, user, dbname, password, sslmode))
 	c.db = db
+	*/
 
 	return err
 }
 
-func (c *Config) MigrateDB() {
+func (c *Config) MigrateDB() error {
 	db := c.DB()
-
-	db.AutoMigrate(
-		&models.Product{},
-		&models.User{},
-		&models.Permission{},
-		&models.History{},
-		&models.PurchaseItem{},
-	)
+	op := &api.Operation{}
+	op.Schema = `
+		name: string @index(exact) @upsert .
+	`
+	err := db.Alter(c.context, op)
+	if err != nil {
+		return err
+	}
+	return nil
 }

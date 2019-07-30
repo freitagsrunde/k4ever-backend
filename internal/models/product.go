@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type ProductDgraph struct {
+	Product
+	Type bool `json:"product"`
+}
+
 // A generic product
 //
 // A generic product with some values
@@ -71,5 +76,5 @@ type ProductInformation struct {
 }
 
 func (p Product) String() string {
-	return fmt.Sprintf("%s_%d", p.Name, p.ID)
+	return fmt.Sprintf("%s_%d", p.Name, p.Uid)
 }

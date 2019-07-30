@@ -1,51 +1,80 @@
 package k4ever
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 
+	"github.com/dgraph-io/dgo/protos/api"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
+	"github.com/tidwall/gjson"
 )
 
 func GetProducts(username string, params models.DefaultParams, config Config) (products []models.Product, err error) {
-	// Subquery to get the sum of histories for each product
-	sumProductsTotal := config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr()
-
-	// Subquery to get the sum of histories by the logged in user for each product
-	sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
-
-	// Subquery to get the time when the current user last bought the item
-	lastBoughtByUser := config.DB().Table("purchase_items").Select("purchase_items.updated_at").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Order("purchase_items.updated_at desc").Limit(1).QueryExpr()
-
-	// Query to get all product information
-	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought, (?) as last_bought", sumProductsTotal, sumProductsUser, lastBoughtByUser).Group("id").Order(params.SortBy + " " + params.Order)
-	if params.Offset != 0 {
-		tx = tx.Offset(params.Offset)
-	}
-	if params.Limit != 0 {
-		tx = tx.Limit(params.Limit)
-	}
-
-	rows, err := tx.Rows()
+	q := `
+		{
+			products(func: has(product)) {
+				uid
+				expand(_all_)	
+			}
+		}
+	`
+	txn := config.DB().NewReadOnlyTxn().BestEffort()
+	resp, err := txn.Query(config.Context(), q)
 	if err != nil {
 		return []models.Product{}, err
 	}
-	for rows.Next() {
-		var p models.Product
-		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.Disabled, &p.TimesBoughtTotal, &p.TimesBought, &p.LastBought); errSql != nil {
-			return []models.Product{}, errSql
-		}
-		products = append(products, p)
+
+	var decode struct {
+		Products []models.Product
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = json.Unmarshal(resp.GetJson(), &decode); err != nil {
 		return []models.Product{}, err
 	}
 
-	return products, nil
+	return decode.Products, nil
+
+	// Subquery to get the sum of histories for each product
+	//sumProductsTotal := config.DB().Table("purchase_items").Select("sum(amount)").Group("product_id").Where("purchase_items.product_id = p.id").QueryExpr()
+
+	// Subquery to get the sum of histories by the logged in user for each product
+	//sumProductsUser := config.DB().Table("purchase_items").Select("sum(purchase_items.amount)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Group("purchase_items.product_id").QueryExpr()
+
+	// Subquery to get the time when the current user last bought the item
+	//lastBoughtByUser := config.DB().Table("purchase_items").Select("purchase_items.updated_at").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Order("purchase_items.updated_at desc").Limit(1).QueryExpr()
+
+	// Query to get all product information
+	//tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought, (?) as last_bought", sumProductsTotal, sumProductsUser, lastBoughtByUser).Group("id").Order(params.SortBy + " " + params.Order)
 }
 
 func GetProduct(productID string, username string, config Config) (product models.Product, err error) {
-	if err := config.DB().First(&product).Where("id = ?", productID).Error; err != nil {
+	q := `
+		query withvar($productID: string){
+			product(func: uid($productID)) {
+				uid
+				expand(_all_)
+			}
+		}
+	`
+
+	txn := config.DB().NewReadOnlyTxn().BestEffort()
+	resp, err := txn.QueryWithVars(config.Context(), q, map[string]string{"$productID": productID})
+	if err != nil {
+		return models.Product{}, err
+	}
+
+	var decode struct {
+		Product []models.Product
+	}
+
+	fmt.Println(string(resp.GetJson()))
+	if err = json.Unmarshal(resp.GetJson(), &decode); err != nil {
+		return models.Product{}, err
+	}
+
+	return decode.Product[0], nil
+	/*if err := config.DB().First(&product).Where("id = ?", productID).Error; err != nil {
 		return models.Product{}, err
 	}
 
@@ -63,27 +92,55 @@ func GetProduct(productID string, username string, config Config) (product model
 	// Subquery to get the time when the current user last bought the item
 	if err := config.DB().Table("purchase_items").Select("purchase_items.updated_at as last_bought").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = ?", username, productID).Order("purchase_items.updated_at desc").Limit(1).Scan(&product).Error; err != nil {
 		return models.Product{}, err
-	}
-
-	return product, nil
+	}*/
 }
 
 func CreateProduct(product *models.Product, config Config) (err error) {
-	if err := config.DB().Create(product).Error; err != nil {
+	checkingQuery := `
+		query withvar($name: string){
+			product(func: eq(name, $name)) @filter(has(product)){
+				uid
+			}
+		}
+	`
+	txn := config.DB().NewTxn()
+	resp, err := txn.QueryWithVars(config.Context(), checkingQuery, map[string]string{"$name": product.Name})
+	if err != nil {
 		return err
 	}
+
+	if length := gjson.Get(string(resp.GetJson()), "product.#"); length.Num > 0 {
+		return errors.New("product already exists")
+	}
+
+	pg := &models.ProductDgraph{*product, true}
+	mu := &api.Mutation{
+		CommitNow: true,
+	}
+
+	pb, err := json.Marshal(pg)
+	if err != nil {
+		return err
+	}
+	mu.SetJson = pb
+
+	_, err = txn.Mutate(config.Context(), mu)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func UpdateProduct(product *models.Product, config Config) (err error) {
-	if err := config.DB().Update(product).Error; err != nil {
+	/*if err := config.DB().Update(product).Error; err != nil {
 		return err
-	}
+	}*/
 	return nil
 }
 
 func BuyProduct(productID string, username string, config Config) (purchase models.History, err error) {
-	var product models.Product
+	/*var product models.Product
 
 	tx := config.DB().Begin()
 	// Get Product
@@ -128,6 +185,6 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 		tx.Rollback()
 		return models.History{}, err
 	}
-	tx.Commit()
+	tx.Commit()*/
 	return purchase, nil
 }
