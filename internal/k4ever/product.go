@@ -3,7 +3,6 @@ package k4ever
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/dgraph-io/dgo/protos/api"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
@@ -68,7 +67,6 @@ func GetProduct(productID string, username string, config Config) (product model
 		Product []models.Product
 	}
 
-	fmt.Println(string(resp.GetJson()))
 	if err = json.Unmarshal(resp.GetJson(), &decode); err != nil {
 		return models.Product{}, err
 	}
@@ -104,6 +102,7 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 		}
 	`
 	txn := config.DB().NewTxn()
+	defer txn.Discard(config.Context())
 	resp, err := txn.QueryWithVars(config.Context(), checkingQuery, map[string]string{"$name": product.Name})
 	if err != nil {
 		return err
@@ -114,9 +113,7 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 	}
 
 	pg := &models.ProductDgraph{*product, true}
-	mu := &api.Mutation{
-		CommitNow: true,
-	}
+	mu := &api.Mutation{}
 
 	pb, err := json.Marshal(pg)
 	if err != nil {
@@ -128,6 +125,7 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 	if err != nil {
 		return err
 	}
+	txn.Commit(config.Context())
 
 	return nil
 }

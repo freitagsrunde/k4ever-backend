@@ -1,5 +1,10 @@
 package models
 
+type UserDgraph struct {
+	User
+	Type bool `json:"user"`
+}
+
 // Make custom type to add custom marshal interface to it
 
 // A generic User
