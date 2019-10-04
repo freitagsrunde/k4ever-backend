@@ -41,7 +41,7 @@ func init() {
 func createUser(cmd *cobra.Command, args []string) {
 	username := args[0]
 	config := context.NewConfig()
-	if _, err := k4ever.GetUser(username, config); err != nil {
+	if _, err := k4ever.GetUser(username, true, config); err != nil {
 		if strings.HasPrefix(err.Error(), "record not found") == false {
 			fmt.Println(err.Error())
 			return

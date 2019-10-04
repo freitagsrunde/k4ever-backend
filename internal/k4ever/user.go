@@ -8,7 +8,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func GetUsers(params models.DefaultParams, config Config) (users []models.User, err error) {
+func GetUsers(params models.DefaultParams, stripped bool, config Config) (users []models.User, err error) {
+	selection := "*"
+	if stripped {
+		selection = "id, user_name, display_name"
+	}
+
 	tx := config.DB()
 	if params.Offset != 0 {
 		tx = tx.Offset(params.Offset)
@@ -16,14 +21,19 @@ func GetUsers(params models.DefaultParams, config Config) (users []models.User, 
 	if params.Limit != 0 {
 		tx = tx.Limit(params.Limit)
 	}
-	if err = tx.Find(&users).Order(params.SortBy + " " + params.Order).Error; err != nil {
+	if err = tx.Select(selection).Find(&users).Order(params.SortBy + " " + params.Order).Error; err != nil {
 		return []models.User{}, err
 	}
 	return users, err
 }
 
-func GetUser(name string, config Config) (user models.User, err error) {
-	if err = config.DB().Where("user_name = ?", name).First(&user).Error; err != nil {
+func GetUser(name string, stripped bool, config Config) (user models.User, err error) {
+	selection := "*"
+	if stripped {
+		selection = "id, user_name, display_name"
+	}
+
+	if err = config.DB().Select(selection).Where("user_name = ?", name).First(&user).Error; err != nil {
 		return models.User{}, err
 	}
 	return user, nil
@@ -48,7 +58,7 @@ func AddBalance(username string, amount float64, config Config) (balance models.
 	tx := config.DB().Begin()
 
 	var user models.User
-	if user, err = GetUser(username, config); err != nil {
+	if user, err = GetUser(username, false, config); err != nil {
 		return models.History{}, err
 	}
 	user.Balance = user.Balance + amount

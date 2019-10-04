@@ -2,11 +2,11 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
+	"github.com/freitagsrunde/k4ever-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +14,6 @@ func ProductRoutesPublic(router *gin.RouterGroup, config k4ever.Config) {
 	products := router.Group("/products/")
 	{
 		getProduct(products, config)
-		setProductImage(products, config)
 	}
 }
 
@@ -24,6 +23,7 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 		getProducts(products, config)
 		createProduct(products, config)
 		buyProduct(products, config)
+		setProductImage(products, config)
 	}
 }
 
@@ -58,25 +58,15 @@ func getProducts(router *gin.RouterGroup, config k4ever.Config) {
 	}
 	router.GET("", func(c *gin.Context) {
 		var err error
-		params := models.DefaultParams{}
-		params.SortBy = c.DefaultQuery("sort_by", "name")
-		params.Order = c.DefaultQuery("order", "asc")
-		offset := c.Query("offset")
-		if offset != "" {
-			params.Offset, err = strconv.Atoi(offset)
-		}
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "offset is not a number"})
+		if !utils.CheckRole(0, c) {
 			return
 		}
-		limit := c.Query("limit")
-		if limit != "" {
-			params.Limit, err = strconv.Atoi(limit)
-		}
+		params, err := utils.ParseDefaultParams(c)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "limit is not a number"})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]
 		// Since at this point a user was already validated we can use a default user if non is found for testing
@@ -157,6 +147,9 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 		Product models.Product
 	}
 	router.POST("", func(c *gin.Context) {
+		if !utils.CheckRole(2, c) {
+			return
+		}
 		var product models.Product
 		if err := c.ShouldBindJSON(&product); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -193,6 +186,9 @@ func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 		Id int `json:"id"`
 	}
 	router.PUT(":id/image/", func(c *gin.Context) {
+		if !utils.CheckRole(2, c) {
+			return
+		}
 		var product models.Product
 		if err := config.DB().Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -238,6 +234,9 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 		Id int `json:"id"`
 	}
 	router.POST(":id/buy/", func(c *gin.Context) {
+		if !utils.CheckRole(1, c) {
+			return
+		}
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]
 		if username == nil {
