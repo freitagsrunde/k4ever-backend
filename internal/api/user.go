@@ -59,7 +59,9 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		users, err := k4ever.GetUsers(params, utils.CheckIfUserAccess("", 3, c), config)
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+		users, err := k4ever.GetUsers(params, !utils.CheckIfUserAccess(username.(string), 3, c), config)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 			return
@@ -98,7 +100,9 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 		var user models.User
 		var err error
 		name := c.Param("name")
-		if user, err = k4ever.GetUser(name, utils.CheckIfUserAccess(name, 3, c), config); err != nil {
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+		if user, err = k4ever.GetUser(name, !utils.CheckIfUserAccess(username.(string), 3, c), config); err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
