@@ -193,6 +193,9 @@ func changeUserRole(router *gin.RouterGroup, config k4ever.Config) {
 		Role int `json:"role"`
 	}
 	router.PUT(":name/role/", func(c *gin.Context) {
+		if !utils.CheckRole(4, c) {
+			return
+		}
 		var user models.User
 		var err error
 		var role AddPermissionParam
