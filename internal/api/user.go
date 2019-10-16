@@ -17,7 +17,7 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 		getUsers(users, config)
 		getUser(users, config)
 		createUser(users, config)
-		addPermissionToUser(users, config)
+		changeUserRole(users, config)
 		PurchaseRoutes(users, config)
 		addBalance(users, config)
 		transferToUser(users, config)
@@ -167,11 +167,9 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route PUT /users/{name}/permissions/ user permission addPermissionToUser
+// swagger:route PUT /users/{name}/role/ user permission addPermissionToUser
 //
-// Add permission to user
-//
-// Links an existing permission to a user
+// Change users role level
 //
 //		Consumes:
 //		- application/json
@@ -184,23 +182,20 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Responses:
 //		  default: GenericError
-//        203: User
+//        200: User
 //		  400: GenericError
 //		  404: GenericError
-func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
+func changeUserRole(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters addPermissionToUser
 	type AddPermissionParam struct {
-		// in: path
-		// required: true
-		Name string `json:"name"`
 		// in: body
 		// required: true
-		Role int
+		Role int `json:"role"`
 	}
 	router.PUT(":name/role/", func(c *gin.Context) {
 		var user models.User
 		var err error
-		var role int
+		var role AddPermissionParam
 		if err = c.ShouldBindJSON(&role); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
@@ -209,11 +204,11 @@ func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
-		if err = config.DB().Model(&user).Update("role", role).Error; err != nil {
+		if err = config.DB().Model(&user).Update("role", role.Role).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusAccepted, user)
+		c.JSON(http.StatusOK, user)
 	})
 }
 

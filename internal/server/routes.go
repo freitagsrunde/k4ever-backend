@@ -20,7 +20,6 @@ func registerRoutes(app *gin.Engine, config k4ever.Config) {
 	{
 		v1Private.Use(api.AuthMiddleware.MiddlewareFunc())
 
-		api.PermissionRoutesPrivate(v1Private, config)
 		api.ProductRoutesPrivate(v1Private, config)
 		api.UserRoutesPrivate(v1Private, config)
 		v1Private.Static("files", "./files")
