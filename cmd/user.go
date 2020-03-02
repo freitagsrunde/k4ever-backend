@@ -30,10 +30,12 @@ If no DisplayName is given, the username is used instead`,
 
 var password string
 var displayName string
+var role int
 
 func init() {
 	userCreateCmd.Flags().StringVarP(&password, "password", "p", "", "Password flag for automated usage")
 	userCreateCmd.Flags().StringVarP(&displayName, "displayName", "d", "", "The name that others will see")
+	userCreateCmd.Flags().IntVarP(&role, "role", "r", 1, "The role the user has (number 0 to 4)")
 	userCmd.AddCommand(userCreateCmd)
 	rootCmd.AddCommand(userCmd)
 }
@@ -41,7 +43,7 @@ func init() {
 func createUser(cmd *cobra.Command, args []string) {
 	username := args[0]
 	config := context.NewConfig()
-	if _, err := k4ever.GetUser(username, config); err != nil {
+	if _, err := k4ever.GetUser(username, true, config); err != nil {
 		if strings.HasPrefix(err.Error(), "record not found") == false {
 			fmt.Println(err.Error())
 			return
@@ -52,6 +54,10 @@ func createUser(cmd *cobra.Command, args []string) {
 	}
 	if displayName == "" {
 		displayName = args[0]
+	}
+	if role > 4 {
+		fmt.Println("Please choose a role < 4")
+		return
 	}
 	if password == "" {
 		fmt.Println("Please enter a password")
@@ -74,7 +80,7 @@ func createUser(cmd *cobra.Command, args []string) {
 	}
 	fmt.Printf("Create user: %s...\n", username)
 
-	user := models.User{UserName: username, DisplayName: displayName, Password: password}
+	user := models.User{UserName: username, DisplayName: displayName, Password: password, Role: role}
 	if err := k4ever.CreateUser(&user, config); err != nil {
 		fmt.Printf("Error while creating user: %s", err.Error())
 		return

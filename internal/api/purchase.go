@@ -5,6 +5,7 @@ import (
 
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
+	"github.com/freitagsrunde/k4ever-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,9 +38,13 @@ func getPurchaseHistory(router *gin.RouterGroup, config k4ever.Config) {
 		Name string `json:"name"`
 	}
 	router.GET("", func(c *gin.Context) {
+		if !utils.CheckRole(0, c) {
+			return
+		}
 		var user models.User
 		var err error
-		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
+		name := c.Param("name")
+		if user, err = k4ever.GetUser(name, utils.CheckIfUserAccess(name, 3, c), config); err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}

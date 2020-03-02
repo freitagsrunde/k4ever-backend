@@ -22,7 +22,7 @@ func TestGetUsersEmpty(t *testing.T) {
 
 	params := DefaultParamsTest()
 	params.SortBy = "user_name"
-	users, err := GetUsers(params, conf)
+	users, err := GetUsers(params, false, conf)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 0, len(users))
@@ -38,7 +38,7 @@ func TestGetUsers(t *testing.T) {
 
 	params := DefaultParamsTest()
 	params.SortBy = "user_name"
-	users, err := GetUsers(params, conf)
+	users, err := GetUsers(params, false, conf)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 1, len(users))
@@ -47,7 +47,7 @@ func TestGetUsers(t *testing.T) {
 func TestGetUserEmpty(t *testing.T) {
 	conf := NewK4everTest()
 
-	user, err := GetUser("name", conf)
+	user, err := GetUser("name", false, conf)
 
 	assert.Equal(t, models.User{}, user)
 	assert.NotEqual(t, nil, err)
@@ -62,7 +62,7 @@ func TestGetUser(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 
-	user, err := GetUser(testUser.UserName, conf)
+	user, err := GetUser(testUser.UserName, false, conf)
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, uint(1), user.ID)

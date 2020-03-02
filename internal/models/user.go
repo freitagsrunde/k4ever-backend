@@ -19,11 +19,14 @@ type User struct {
 	// The users current balance
 	Balance float64 `json:"balance"`
 
+	// The Role the user has (as an integer)
+	Role int `json:"role"`
+
 	// A list of user permission
-	Permissions []Permission `json:"permissions" gorm:"many2many:user_permissions;"`
+	Permissions []Permission `json:"permissions,omitempty" gorm:"many2many:user_permissions;"`
 
 	// A list of purchases made by the user
-	Histories []History `json:"histories"`
+	Histories []History `json:"histories,omitempty"`
 }
 
 // This is just for swagger

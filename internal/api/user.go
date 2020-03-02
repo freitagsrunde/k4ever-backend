@@ -2,12 +2,12 @@ package api
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
+	"github.com/freitagsrunde/k4ever-backend/internal/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,7 +17,7 @@ func UserRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 		getUsers(users, config)
 		getUser(users, config)
 		createUser(users, config)
-		addPermissionToUser(users, config)
+		changeUserRole(users, config)
 		PurchaseRoutes(users, config)
 		addBalance(users, config)
 		transferToUser(users, config)
@@ -51,28 +51,17 @@ func getUsers(router *gin.RouterGroup, config k4ever.Config) {
 		Users []models.User
 	}
 	router.GET("", func(c *gin.Context) {
-		var err error
-		params := models.DefaultParams{}
-		params.SortBy = c.DefaultQuery("sort_by", "user_name")
-		params.Order = c.DefaultQuery("order", "asc")
-		offset := c.Query("offset")
-		if offset != "" {
-			params.Offset, err = strconv.Atoi(offset)
-		}
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "offset is not a number"})
+		if !utils.CheckRole(0, c) {
 			return
 		}
-		limit := c.Query("limit")
-		if limit != "" {
-			params.Limit, err = strconv.Atoi(limit)
-		}
+		params, err := utils.ParseDefaultParams(c)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "limit is not a number"})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		users, err := k4ever.GetUsers(params, config)
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+		users, err := k4ever.GetUsers(params, !utils.CheckIfUserAccess(username.(string), 3, c), config)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 			return
@@ -105,9 +94,15 @@ func getUser(router *gin.RouterGroup, config k4ever.Config) {
 		Name string `json:"name"`
 	}
 	router.GET(":name/", func(c *gin.Context) {
+		if !utils.CheckRole(0, c) {
+			return
+		}
 		var user models.User
 		var err error
-		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
+		name := c.Param("name")
+		claims := jwt.ExtractClaims(c)
+		username := claims["name"]
+		if user, err = k4ever.GetUser(name, !utils.CheckIfUserAccess(username.(string), 3, c), config); err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
@@ -150,6 +145,9 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 		NewUser newUser
 	}
 	router.POST("", func(c *gin.Context) {
+		if !utils.CheckRole(4, c) {
+			return
+		}
 		var bind newUser
 		var user models.User
 		if err := c.ShouldBindJSON(&bind); err != nil {
@@ -173,11 +171,9 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route PUT /users/{name}/permissions/ user permission addPermissionToUser
+// swagger:route PUT /users/{name}/role/ user permission addPermissionToUser
 //
-// Add permission to user
-//
-// Links an existing permission to a user
+// Change users role level
 //
 //		Consumes:
 //		- application/json
@@ -190,39 +186,36 @@ func createUser(router *gin.RouterGroup, config k4ever.Config) {
 //
 //		Responses:
 //		  default: GenericError
-//        203: User
+//        200: User
 //		  400: GenericError
 //		  404: GenericError
-func addPermissionToUser(router *gin.RouterGroup, config k4ever.Config) {
+func changeUserRole(router *gin.RouterGroup, config k4ever.Config) {
 	// swagger:parameters addPermissionToUser
 	type AddPermissionParam struct {
-		// in: path
-		// required: true
-		Name string `json:"name"`
 		// in: body
 		// required: true
-		Permission models.Permission
+		Role int `json:"role"`
 	}
-	router.PUT(":name/permissions/", func(c *gin.Context) {
+	router.PUT(":name/role/", func(c *gin.Context) {
+		if !utils.CheckRole(4, c) {
+			return
+		}
 		var user models.User
 		var err error
-		var permission models.Permission
-		if err = c.ShouldBindJSON(&permission); err != nil {
+		var role AddPermissionParam
+		if err = c.ShouldBindJSON(&role); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if user, err = k4ever.GetUser(c.Param("name"), config); err != nil {
+		if user, err = k4ever.GetUser(c.Param("name"), true, config); err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
-		if err = config.DB().Where("name = ?", permission.Name).First(&permission).Error; err != nil {
+		if err = config.DB().Model(&user).Update("role", role.Role).Error; err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
-		user.Permissions = append(user.Permissions, permission)
-		config.DB().Save(&user)
-
-		c.JSON(http.StatusAccepted, user)
+		c.JSON(http.StatusOK, user)
 	})
 }
 
@@ -265,23 +258,14 @@ func addBalance(router *gin.RouterGroup, config k4ever.Config) {
 		Balance Balance
 	}
 	router.PUT(":name/balance/", func(c *gin.Context) {
+		if !utils.CheckIfUserAccess(c.Param("name"), 3, c) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
 		var err error
 		var balance Balance
 		if err := c.ShouldBindJSON(&balance); err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		claims := jwt.ExtractClaims(c)
-		username := claims["name"]
-
-		if username == nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
-			return
-		}
-
-		if username != c.Param("name") {
-			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "You can only update you own account"})
 			return
 		}
 
@@ -333,6 +317,9 @@ func transferToUser(router *gin.RouterGroup, config k4ever.Config) {
 		balance Balance
 	}
 	router.PUT(":name/transfer/", func(c *gin.Context) {
+		if !utils.CheckRole(1, c) {
+			return
+		}
 		// Get current user
 		claims := jwt.ExtractClaims(c)
 		username := claims["name"]

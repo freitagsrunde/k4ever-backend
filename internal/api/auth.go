@@ -33,6 +33,7 @@ func CreateAuthMiddleware(config k4ever.Config) {
 				return jwt.MapClaims{
 					"id":   v.ID,
 					"name": v.UserName,
+					"role": v.Role,
 				}
 			}
 			return nil
@@ -42,9 +43,9 @@ func CreateAuthMiddleware(config k4ever.Config) {
 	}
 }
 
-func getIdentity(claims jwt.MapClaims) interface{} {
+func getIdentity(c *gin.Context) interface{} {
 	user := &models.User{}
-	//uid, err := strconv.ParseUint(claims["id"].(string), 10, 64)
+	claims := jwt.ExtractClaims(c)
 	err := configForAuth.DB().Where("user_name = ?", claims["name"].(string)).First(&user).Error
 	if err != nil {
 		return nil
