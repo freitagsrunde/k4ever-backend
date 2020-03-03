@@ -1,7 +1,6 @@
 package k4ever
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -17,6 +16,40 @@ func TestCreateProduct(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, uint(2), testProduct.ID)
+}
+
+func TestUpdateProduct(t *testing.T) {
+	conf := NewK4everTest()
+
+	testProduct := ProductTest()
+	err := CreateProduct(&testProduct, conf)
+
+	assert.Equal(t, nil, err)
+
+	testProduct.Name = "NewName"
+	err = UpdateProduct(&testProduct, conf)
+
+	assert.Equal(t, nil, err)
+	assert.Equal(t, "NewName", testProduct.Name)
+
+}
+
+func TestDeleteProduct(t *testing.T) {
+	conf := NewK4everTest()
+
+	testProduct := ProductTest()
+	err := CreateProduct(&testProduct, conf)
+
+	assert.Equal(t, nil, err)
+
+	err = DeleteProduct(uint(testProduct.ID), conf)
+
+	assert.Equal(t, nil, err)
+
+	_, err = GetProduct(strconv.Itoa(int(testProduct.ID)), "name", conf)
+
+	assert.Equal(t, "record not found", err.Error())
+
 }
 
 func TestBuyProduct(t *testing.T) {
@@ -107,7 +140,6 @@ func TestGetProduct(t *testing.T) {
 	assert.Equal(t, nil, err3)
 
 	product, err4 := GetProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
-	fmt.Println(testProduct.ID)
 
 	assert.Equal(t, nil, err4)
 	assert.Equal(t, 1, product.TimesBoughtTotal)

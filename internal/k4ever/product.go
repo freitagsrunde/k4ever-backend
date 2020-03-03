@@ -2,7 +2,6 @@ package k4ever
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
@@ -51,7 +50,6 @@ func GetProduct(productID string, username string, config Config) (product model
 	}
 
 	var count []int
-	fmt.Println(productID)
 	if err := config.DB().Table("purchase_items").Select("sum(amount) as times_bought_total").Group("product_id").Where("purchase_items.product_id = ?", productID).Pluck("times_bought_total", &count).Error; err != nil {
 		return models.Product{}, err
 	}
@@ -80,7 +78,14 @@ func CreateProduct(product *models.Product, config Config) (err error) {
 }
 
 func UpdateProduct(product *models.Product, config Config) (err error) {
-	if err := config.DB().Update(product).Error; err != nil {
+	if err := config.DB().Model(product).Updates(product).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteProduct(productID uint, config Config) (err error) {
+	if err := config.DB().Where("id = ?", productID).Delete(&models.Product{}).Error; err != nil {
 		return err
 	}
 	return nil

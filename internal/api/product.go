@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	jwt "github.com/appleboy/gin-jwt"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
@@ -23,6 +24,7 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 		getProducts(products, config)
 		createProduct(products, config)
 		updateProduct(products, config)
+		deleteProduct(products, config)
 		buyProduct(products, config)
 		setProductImage(products, config)
 	}
@@ -187,7 +189,7 @@ func updateProduct(router *gin.RouterGroup, config k4ever.Config) {
 		// required: true
 		Product models.Product
 	}
-	router.PUT("", func(c *gin.Context) {
+	router.PUT(":id/", func(c *gin.Context) {
 		if !utils.CheckRole(2, c) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
@@ -197,12 +199,54 @@ func updateProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		if err := config.DB().Update(&product).Error; err != nil {
+		uintID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+		product.ID = uint(uintID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID is not an int"})
+			return
+		}
+
+		if err = k4ever.UpdateProduct(&product, config); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
 		c.JSON(http.StatusOK, product)
+	})
+}
+
+// swager:route DELETE /products/{id}/ deleteProduct
+//
+// Delete a product
+//
+//		Responses:
+//		  default: GenericError
+//		  200: string
+//		  401: GenericError
+//		  500: GenericError
+func deleteProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters deleteProduct
+	type deleteProductParams struct {
+		// in: path
+		// required: true
+		Id int
+	}
+	router.DELETE(":id/", func(c *gin.Context) {
+		if !utils.CheckRole(2, c) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		uintID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Id is not an int"})
+			return
+		}
+
+		if err = k4ever.DeleteProduct(uint(uintID), config); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, "Deleted")
 	})
 }
 
