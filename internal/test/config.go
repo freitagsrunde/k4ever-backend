@@ -1,6 +1,9 @@
 package test
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -9,6 +12,7 @@ import (
 func init() {
 	conf := NewConfig()
 	conf.MigrateDB()
+
 }
 
 type Config struct {
@@ -95,4 +99,12 @@ func (c *Config) MigrateDB() {
 		&models.History{},
 		&models.PurchaseItem{},
 	)
+
+	deposit := models.Product{}
+	deposit.Name = "Deposit"
+	deposit.Hidden = true
+	if err := db.Where(deposit).FirstOrCreate(&deposit).Error; err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }

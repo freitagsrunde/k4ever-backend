@@ -2,6 +2,7 @@ package k4ever
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 )
@@ -17,7 +18,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	lastBoughtByUser := config.DB().Table("purchase_items").Select("purchase_items.updated_at").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = p.id", username).Order("purchase_items.updated_at desc").Limit(1).QueryExpr()
 
 	// Query to get all product information
-	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought, (?) as last_bought", sumProductsTotal, sumProductsUser, lastBoughtByUser).Group("id").Order(params.SortBy + " " + params.Order)
+	tx := config.DB().Table("products p").Select("*, COALESCE((?), 0) as times_bought_total, COALESCE((?), 0) as times_bought, (?) as last_bought", sumProductsTotal, sumProductsUser, lastBoughtByUser).Group("id").Where("hidden = ?", false).Order(params.SortBy + " " + params.Order)
 	if params.Offset != 0 {
 		tx = tx.Offset(params.Offset)
 	}
@@ -31,7 +32,7 @@ func GetProducts(username string, params models.DefaultParams, config Config) (p
 	}
 	for rows.Next() {
 		var p models.Product
-		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.Disabled, &p.TimesBoughtTotal, &p.TimesBought, &p.LastBought); errSql != nil {
+		if errSql := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.DeletedAt, &p.Name, &p.Price, &p.Description, &p.Deposit, &p.Barcode, &p.Image, &p.Disabled, &p.Hidden, &p.TimesBoughtTotal, &p.TimesBought, &p.LastBought); errSql != nil {
 			return []models.Product{}, errSql
 		}
 		products = append(products, p)
@@ -49,16 +50,19 @@ func GetProduct(productID string, username string, config Config) (product model
 		return models.Product{}, err
 	}
 
-	var count int
-	if err := config.DB().Table("purchase_items").Select("product_id, count(product_id)").Group("product_id").Count(&count).Error; err != nil {
+	var count []int
+	fmt.Println(productID)
+	if err := config.DB().Table("purchase_items").Select("sum(amount) as times_bought_total").Group("product_id").Where("purchase_items.product_id = ?", productID).Pluck("times_bought_total", &count).Error; err != nil {
 		return models.Product{}, err
 	}
-	product.TimesBoughtTotal = count
+	if len(count) > 0 {
+		product.TimesBoughtTotal = count[0]
 
-	if err := config.DB().Table("purchase_items").Select("purchase_items.product_id, count(purchase_items.product_id)").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ?", username).Group("purchase_items.product_id").Count(&count).Error; err != nil {
-		return models.Product{}, err
+		if err := config.DB().Table("purchase_items").Select("sum(purchase_items.amount) as times_bought").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ?", username).Where("purchase_items.product_id = ?", productID).Pluck("times_bought", &count).Error; err != nil {
+			return models.Product{}, err
+		}
+		product.TimesBought = count[0]
 	}
-	product.TimesBought = count
 
 	// Subquery to get the time when the current user last bought the item
 	if err := config.DB().Table("purchase_items").Select("purchase_items.updated_at as last_bought").Joins("join histories on histories.id = purchase_items.history_id").Joins("join users on users.id = histories.user_id").Where("users.user_name = ? AND purchase_items.product_id = ?", username, productID).Order("purchase_items.updated_at desc").Limit(1).Scan(&product).Error; err != nil {
@@ -82,7 +86,7 @@ func UpdateProduct(product *models.Product, config Config) (err error) {
 	return nil
 }
 
-func BuyProduct(productID string, username string, config Config) (purchase models.History, err error) {
+func BuyProduct(productID string, deposit bool, username string, config Config) (purchase models.History, err error) {
 	var product models.Product
 
 	tx := config.DB().Begin()
@@ -110,7 +114,29 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 		tx.Rollback()
 		return models.History{}, err
 	}
+
 	purchase.Items = append(purchase.Items, item)
+
+	if deposit {
+		// Create deposit item
+		var depo models.Product
+		if err := tx.Where("name = ?", "Deposit").First(&depo).Error; err != nil {
+			return models.History{}, err
+		}
+
+		depositItem := models.PurchaseItem{Amount: 1}
+		depositItem.ProductID = depo.ID
+		depositItem.Name = depo.Name
+		depositItem.Price = product.Deposit
+		depositItem.Description = depo.Description
+
+		if err := tx.Create(&depositItem).Error; err != nil {
+			tx.Rollback()
+			return models.History{}, err
+		}
+		purchase.Items = append(purchase.Items, depositItem)
+	}
+
 	// Create Purchase
 	if err := tx.Create(&purchase).Error; err != nil {
 		tx.Rollback()
@@ -123,6 +149,11 @@ func BuyProduct(productID string, username string, config Config) (purchase mode
 		return models.History{}, err
 	}
 	user.Balance = user.Balance - product.Price
+
+	if deposit {
+		user.Balance = user.Balance - product.Deposit
+	}
+
 	user.Histories = append(user.Histories, purchase)
 	if err := tx.Save(&user).Error; err != nil {
 		tx.Rollback()

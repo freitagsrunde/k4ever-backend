@@ -1,6 +1,7 @@
 package k4ever
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -15,7 +16,7 @@ func TestCreateProduct(t *testing.T) {
 	err := CreateProduct(&testProduct, conf)
 
 	assert.Equal(t, nil, err)
-	assert.Equal(t, uint(1), testProduct.ID)
+	assert.Equal(t, uint(2), testProduct.ID)
 }
 
 func TestBuyProduct(t *testing.T) {
@@ -31,7 +32,7 @@ func TestBuyProduct(t *testing.T) {
 
 	assert.Equal(t, nil, err2)
 
-	purchase, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+	purchase, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), false, testUser.UserName, conf)
 
 	assert.Equal(t, nil, err3)
 	assert.Equal(t, uint(1), purchase.ID)
@@ -61,7 +62,7 @@ func TestGetProducts(t *testing.T) {
 
 	assert.Equal(t, nil, err2)
 
-	testHistory, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+	testHistory, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), false, testUser.UserName, conf)
 
 	assert.Equal(t, nil, err3)
 
@@ -101,16 +102,19 @@ func TestGetProduct(t *testing.T) {
 
 	assert.Equal(t, nil, err2)
 
-	testHistory, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+	testHistory, err3 := BuyProduct(strconv.Itoa(int(testProduct.ID)), true, testUser.UserName, conf)
 
 	assert.Equal(t, nil, err3)
 
 	product, err4 := GetProduct(strconv.Itoa(int(testProduct.ID)), testUser.UserName, conf)
+	fmt.Println(testProduct.ID)
 
 	assert.Equal(t, nil, err4)
 	assert.Equal(t, 1, product.TimesBoughtTotal)
 	assert.Equal(t, 1, product.TimesBought)
 	// Check if times are equal
-	timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(*(product.LastBought))
-	assert.Equal(t, true, timesAreEqual)
+	if len(testHistory.Items) > 0 {
+		timesAreEqual := testHistory.Items[0].UpdatedAt.Equal(*(product.LastBought))
+		assert.Equal(t, true, timesAreEqual)
+	}
 }
