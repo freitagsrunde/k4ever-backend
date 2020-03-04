@@ -23,7 +23,8 @@ var configForAuth k4ever.Config
 
 func CreateAuthMiddleware(config k4ever.Config) {
 	configForAuth = config
-	AuthMiddleware = &jwt.GinJWTMiddleware{
+	var err error
+	AuthMiddleware, err = jwt.New(&jwt.GinJWTMiddleware{
 		Realm:      "emtpy",          // TODO
 		Key:        []byte("secret"), // TODO
 		Timeout:    time.Hour,
@@ -40,6 +41,9 @@ func CreateAuthMiddleware(config k4ever.Config) {
 		},
 		//IdentityHandler: getIdentity,
 		Authenticator: authenticate,
+	})
+	if err != nil {
+		log.Error("Could not initialize auth middleware")
 	}
 }
 
