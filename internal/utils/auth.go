@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	jwt "github.com/appleboy/gin-jwt"
+	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/gin-gonic/gin"
 )

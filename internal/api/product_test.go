@@ -10,9 +10,10 @@ import (
 func TestGetProducts(t *testing.T) {
 	app, router, conf := NewApiTest()
 
-	getProducts(router, conf)
+	products := router.Group("/products/")
+	getProducts(products, conf)
 
-	result := PerformRequest(app, "GET", "/api/v1")
+	result := PerformRequest(app, "GET", "/api/v1/products/")
 
 	assert.Equal(t, http.StatusOK, result.Code)
 }

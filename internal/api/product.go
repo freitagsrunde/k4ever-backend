@@ -2,8 +2,9 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
-	jwt "github.com/appleboy/gin-jwt"
+	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/freitagsrunde/k4ever-backend/internal/k4ever"
 	"github.com/freitagsrunde/k4ever-backend/internal/models"
 	"github.com/freitagsrunde/k4ever-backend/internal/utils"
@@ -22,6 +23,8 @@ func ProductRoutesPrivate(router *gin.RouterGroup, config k4ever.Config) {
 	{
 		getProducts(products, config)
 		createProduct(products, config)
+		updateProduct(products, config)
+		deleteProduct(products, config)
 		buyProduct(products, config)
 		setProductImage(products, config)
 	}
@@ -163,14 +166,101 @@ func createProduct(router *gin.RouterGroup, config k4ever.Config) {
 	})
 }
 
-// swagger:route GET /products/{id}/image/ getProductImage
+// swagger:route PUT /products/{id}/ updateProduct
 //
-// Not yet implemented
-//
-// Returns a product image or path to it (tbd)
+// Update a product
 //
 // 		Produces:
 //		- application/json
+//
+//		Consumes:
+//		- application/json
+//
+//		Responses:
+//		  default: GenericError
+//		  200: Product
+//		  400: GenericError
+//		  401: GenericError
+//		  500: GenericError
+func updateProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters updateProduct
+	type ProductParam struct {
+		//in: body
+		// required: true
+		Product models.Product
+	}
+	router.PUT(":id/", func(c *gin.Context) {
+		if !utils.CheckRole(2, c) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		var product models.Product
+		if err := c.ShouldBindJSON(&product); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		uintID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+		product.ID = uint(uintID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ID is not an int"})
+			return
+		}
+
+		if err = k4ever.UpdateProduct(&product, config); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, product)
+	})
+}
+
+// swager:route DELETE /products/{id}/ deleteProduct
+//
+// Delete a product
+//
+//		Responses:
+//		  default: GenericError
+//		  200: string
+//		  401: GenericError
+//		  500: GenericError
+func deleteProduct(router *gin.RouterGroup, config k4ever.Config) {
+	// swagger:parameters deleteProduct
+	type deleteProductParams struct {
+		// in: path
+		// required: true
+		Id int
+	}
+	router.DELETE(":id/", func(c *gin.Context) {
+		if !utils.CheckRole(2, c) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		uintID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Id is not an int"})
+			return
+		}
+
+		if err = k4ever.DeleteProduct(uint(uintID), config); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, "Deleted")
+	})
+}
+
+// swagger:route PUT /products/{id}/image/ setProductImage
+//
+// set the product image for a single product
+//
+// Set the product image from the form value "file"
+//
+// 		Produces:
+//		- application/json
+//
+//		Consumes:
+//		- multipart/form-data
 //
 //		Security:
 //		  jwt:
@@ -184,6 +274,10 @@ func setProductImage(router *gin.RouterGroup, config k4ever.Config) {
 		// in: path
 		// required: true
 		Id int `json:"id"`
+
+		// in: form
+		// required: true
+		File string `json:"file"`
 	}
 	router.PUT(":id/image/", func(c *gin.Context) {
 		if !utils.CheckRole(2, c) {
@@ -232,6 +326,10 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 		// in: path
 		// required: true
 		Id int `json:"id"`
+
+		// in: body
+		// required: false
+		Deposit bool `json:"deposit"`
 	}
 	router.POST(":id/buy/", func(c *gin.Context) {
 		if !utils.CheckRole(1, c) {
@@ -243,7 +341,16 @@ func buyProduct(router *gin.RouterGroup, config k4ever.Config) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid token"})
 			return
 		}
-		purchase, err := k4ever.BuyProduct(c.Param("id"), username.(string), config)
+
+		var productParams buyProductParams
+		if c.Request.Body == http.NoBody {
+			if err := c.ShouldBindJSON(&productParams); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+		}
+
+		purchase, err := k4ever.BuyProduct(c.Param("id"), productParams.Deposit, username.(string), config)
 		if err != nil {
 			if err.Error() == "record not found" {
 				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Record not found"})

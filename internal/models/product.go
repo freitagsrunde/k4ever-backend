@@ -68,6 +68,11 @@ type ProductInformation struct {
 	//
 	// required: false
 	Disabled bool `json:"disabled" gorm:"default:false"`
+
+	// A flag to determine wether the object should be displayed at all
+	//
+	// reqired: false
+	Hidden bool `json:"hidden" gorm:"default:false"`
 }
 
 func (p Product) String() string {

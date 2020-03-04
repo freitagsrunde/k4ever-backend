@@ -147,4 +147,11 @@ func (c *Config) MigrateDB() {
 		&models.History{},
 		&models.PurchaseItem{},
 	)
+
+	deposit := models.Product{}
+	deposit.Name = "Deposit"
+	deposit.Hidden = true
+	if err := db.Where(deposit).FirstOrCreate(&deposit).Error; err != nil {
+		os.Exit(1)
+	}
 }

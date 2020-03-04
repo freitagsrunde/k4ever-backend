@@ -25,8 +25,8 @@ func NewApiTest() (app *gin.Engine, router *gin.RouterGroup, conf k4ever.Config)
 	app = gin.New()
 
 	CreateAuthMiddleware(conf)
-	app.POST("/api/v1/login/", AuthMiddleware.LoginHandler)
 	router = app.Group("/api/v1")
+	router.POST("/login/", AuthMiddleware.LoginHandler)
 	router.Use(AuthMiddleware.MiddlewareFunc())
 
 	// Create test user
